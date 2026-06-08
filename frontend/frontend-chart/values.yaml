@@ -1,0 +1,42 @@
+replicaCount: 1
+
+image:
+  repository: 480891637713.dkr.ecr.us-east-1.amazonaws.com/devops-todo-frontend
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets:
+  - name: ecr-registry-secret
+
+nameOverride: ""
+fullnameOverride: "devops-todo-frontend"
+
+service:
+  type: ClusterIP
+  port: 80 
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    kubernetes.io/ingress.class: nginx
+  hosts:
+    - host: todo.local 
+      paths:
+        - path: /
+          pathType: Prefix
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
+
+autoscaling:
+  enabled: false
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
