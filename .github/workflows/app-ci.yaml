@@ -1,4 +1,4 @@
-name: Application CI Pipeline
+name: Application CI CD Pipeline
 
 on:
   push:
