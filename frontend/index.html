@@ -3,78 +3,333 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevOps Todo App</title>
+    <title>DogOps - יומן מעקב התנהגות כלבים</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="todo-container">
-        <h1>הרשימה שלי (DevOps Todo)</h1>
+    <audio id="clicker-audio" src="./assets/dog-clicker.mp3" preload="auto"></audio>
+    <audio id="oops-audio" src="./assets/oops.mp3" preload="auto"></audio>
+
+    <div class="todo-container" id="main-container">
+        <h1>
+            <span class="emoji-paw">🐾</span>
+            DogOps Dashboard
+        </h1>
+        <p class="subtitle">יומן מעקב התנהגות ואילוף בשטח</p>
+
+        <div class="nav-menu">
+            <button id="tab-dashboard" class="nav-item active" onclick="switchView('dashboard')">📋 לוח דיווח</button>
+            <button id="tab-history" class="nav-item" onclick="switchView('history')">📜 היסטוריה</button>
+        </div>
         
-        <div class="input-group">
-            <input type="text" id="todo-input" placeholder="הוסף משימה חדשה...">
-            <button onclick="addTodo()">הוסף</button>
+        <div id="input-section">
+            <div class="input-group">
+                <input type="text" id="todo-input" placeholder="מה הכלב עשה עכשיו? (למשל: משך ברצועה...)">
+            </div>
+
+            <div class="advanced-inputs">
+                <div class="input-subgroup">
+                    <label for="todo-priority">🎯 חשיבות לעבודה:</label>
+                    <select id="todo-priority">
+                        <option value="קל">קל</option>
+                        <option value="בינוני" selected>בינוני</option>
+                        <option value="חשוב">חשוב 🚨</option>
+                    </select>
+                </div>
+                <div class="input-subgroup">
+                    <label for="todo-duedate">📅 תאריך יעד:</label>
+                    <input type="date" id="todo-duedate">
+                </div>
+                
+                <div class="input-subgroup full-width">
+                    <label for="todo-location">📍 מיקום האירוע (ושמירת מפה):</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="todo-location" class="location-input" placeholder="איפה זה קרה? (למשל: פארק...)" style="flex: 1;">
+                        <button type="button" id="gps-btn" class="gps-btn" onclick="fetchGPS()" title="משוך מיקום נוכחי מלוויין">🛰️ צרף מיקום</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button class="btn-good" onclick="addDogEvent('good')">🟢 כלב טוב !</button>
+                <button class="btn-oops" onclick="addDogEvent('oops')">🔴 אופס...</button>
+            </div>
         </div>
 
-        <ul id="todo-list">
-            </ul>
+        <div class="filter-group">
+            <button class="filter-btn active" id="filter-all" onclick="setFilter('all')">הכל</button>
+            <button class="filter-btn" id="filter-good" onclick="setFilter('good')">🟢 כלב טוב</button>
+            <button class="filter-btn" id="filter-oops" onclick="setFilter('oops')">🔴 אופס</button>
+        </div>
+
+        <div id="todo-list-container"></div>
     </div>
 
     <script>
         const API_URL = '/api/todos';
+        const clickerSound = document.getElementById('clicker-audio');
+        const oopsSound = document.getElementById('oops-audio');
+        
+        let currentFilter = 'all';
+        let currentView = 'dashboard';
+        let editingTodoId = null;
+        let currentGpsLink = null; // משתנה זמני לשמירת המיקום עד לשמירת המשימה
+
+        let localTodos = [
+            {"id": 1, "title": "🟢 הכלב הגיב מצוין לפקודת 'אלי'", "created_at": "2026-06-10T14:02:00", "priority": null, "due_date": null, "location": "גינת הכלבים", "gps_link": null},
+            {"id": 2, "title": "🔴 אופס... משך חזק ברצועה בגלל חתול", "created_at": "2026-06-10T14:05:00", "priority": "חשוב", "due_date": "2026-06-15", "location": "רחוב הרצל", "gps_link": "https://www.google.com/maps?q=31.8903,34.8113"}
+        ];
 
         async function fetchTodos() {
             try {
                 const response = await fetch(API_URL);
+                if (!response.ok) throw new Error('Backend offline');
                 const todos = await response.json();
-                const ul = document.getElementById('todo-list');
-                ul.innerHTML = '';
-                
-                todos.forEach(todo => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `
-                        <span>${todo.title}</span>
-                        <button class="delete-btn" onclick="deleteTodo(${todo.id})">מחק</button>
-                    `;
-                    ul.appendChild(li);
-                });
+                renderTodos(todos);
             } catch (error) {
-                console.error('Error fetching todos:', error);
+                renderTodos(localTodos);
             }
         }
 
-        async function addTodo() {
+        // פונקציה לשליפת ה-GPS של המכשיר
+        function fetchGPS() {
+            const btn = document.getElementById('gps-btn');
+            btn.innerText = '⏳ מתביית...';
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        currentGpsLink = `https://www.google.com/maps?q=${lat},${lon}`;
+                        btn.innerText = '✅ נשמר!';
+                        btn.classList.add('success');
+                    },
+                    (error) => {
+                        console.error("GPS Error: ", error);
+                        btn.innerText = '❌ נכשל';
+                        alert('לא הצלחנו למשוך מיקום. ודא שהרשאת המיקום דולקת בדפדפן.');
+                    }
+                );
+            } else {
+                alert('הדפדפן שלך לא תומך בשירותי מיקום.');
+            }
+        }
+
+        function switchView(viewName) {
+            currentView = viewName;
+            const container = document.getElementById('main-container');
+            const inputSection = document.getElementById('input-section');
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            
+            if (viewName === 'history') {
+                document.getElementById('tab-history').classList.add('active');
+                inputSection.style.display = 'none';
+                container.classList.add('wide-mode');
+            } else {
+                document.getElementById('tab-dashboard').classList.add('active');
+                inputSection.style.display = 'block';
+                container.classList.remove('wide-mode');
+            }
+        }
+
+        function setFilter(filterValue) {
+            currentFilter = filterValue;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            if (filterValue === 'all') document.getElementById('filter-all').classList.add('active');
+            if (filterValue === 'good') document.getElementById('filter-good').classList.add('active');
+            if (filterValue === 'oops') document.getElementById('filter-oops').classList.add('active');
+            fetchTodos();
+        }
+
+        function renderTodos(todos) {
+            const container = document.getElementById('todo-list-container');
+            container.innerHTML = '';
+
+            let filteredTodos = todos;
+            if (currentFilter === 'good') filteredTodos = todos.filter(t => !t.title.startsWith('🔴'));
+            else if (currentFilter === 'oops') filteredTodos = todos.filter(t => t.title.startsWith('🔴'));
+
+            filteredTodos.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            let currentDay = '';
+            let currentUl = null;
+
+            filteredTodos.forEach(todo => {
+                const dateObj = new Date(todo.created_at);
+                const dateStr = dateObj.toLocaleDateString('he-IL');
+                const timeStr = dateObj.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+
+                if (dateStr !== currentDay) {
+                    currentDay = dateStr;
+                    const dayHeader = document.createElement('div');
+                    dayHeader.classList.add('day-header');
+                    const todayStr = new Date().toLocaleDateString('he-IL');
+                    dayHeader.innerText = dateStr === todayStr ? 'היום - ' + dateStr : dateStr;
+                    container.appendChild(dayHeader);
+                    currentUl = document.createElement('ul');
+                    container.appendChild(currentUl);
+                }
+
+                const li = document.createElement('li');
+                const isOops = todo.title.startsWith('🔴');
+                li.classList.add(isOops ? 'status-oops' : 'status-good');
+                
+                if (todo.id === editingTodoId) {
+                    const rawTitle = todo.title.replace(/^🟢\s*|^🔴\s*/, '');
+                    li.innerHTML = `
+                        <div class="edit-form-container">
+                            <input type="text" id="edit-title-${todo.id}" class="edit-title-input" value="${rawTitle}">
+                            <div class="edit-meta-row">
+                                <input type="text" id="edit-location-${todo.id}" placeholder="📍 מיקום" value="${todo.location || ''}">
+                                ${isOops ? `
+                                    <select id="edit-priority-${todo.id}">
+                                        <option value="קל" ${todo.priority === 'קל' ? 'selected' : ''}>קל</option>
+                                        <option value="בינוני" ${todo.priority === 'בינוני' ? 'selected' : ''}>בינוני</option>
+                                        <option value="חשוב" ${todo.priority === 'חשוב' ? 'selected' : ''}>חשוב</option>
+                                    </select>
+                                    <input type="date" id="edit-date-${todo.id}" value="${todo.due_date || ''}">
+                                ` : ''}
+                            </div>
+                        </div>
+                        <div class="actions-wrapper">
+                            <button class="save-btn" onclick="saveTodoEdit(${todo.id}, ${isOops})">שמור</button>
+                            <button class="cancel-btn" onclick="cancelTodoEdit()">ביטול</button>
+                        </div>
+                    `;
+                } else {
+                    let metaHtml = `<div class="meta-wrapper">`;
+                    if (todo.location) metaHtml += `<span class="badge-location">📍 ${todo.location}</span>`;
+                    
+                    // ציור הקישור למפה אם נשמר
+                    if (todo.gps_link) {
+                        metaHtml += `<a href="${todo.gps_link}" target="_blank" class="badge-map">🗺️ נווט במפה</a>`;
+                    }
+                    
+                    if (isOops) {
+                        if (todo.priority) metaHtml += `<span class="badge-priority">🔥 ${todo.priority}</span>`;
+                        if (todo.due_date) {
+                            const formattedDueDate = new Date(todo.due_date).toLocaleDateString('he-IL');
+                            metaHtml += `<span class="badge-date">📅 יעד: ${formattedDueDate}</span>`;
+                        }
+                    }
+                    metaHtml += `</div>`;
+
+                    li.innerHTML = `
+                        <div class="todo-content-wrapper">
+                            <span>${todo.title}</span>
+                            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                                <span class="time-stamp">${timeStr}</span>
+                                ${metaHtml}
+                            </div>
+                        </div>
+                        <div class="actions-wrapper">
+                            <button class="edit-btn" onclick="startTodoEdit(${todo.id})">ערוך</button>
+                            <button class="delete-btn" onclick="deleteTodo(${todo.id})">מחק</button>
+                        </div>
+                    `;
+                }
+                
+                if (currentUl) currentUl.appendChild(li);
+            });
+        }
+
+        function startTodoEdit(id) { editingTodoId = id; fetchTodos(); }
+        function cancelTodoEdit() { editingTodoId = null; fetchTodos(); }
+
+        async function saveTodoEdit(id, isOops) {
+            const updatedText = document.getElementById(`edit-title-${id}`).value.trim();
+            if (updatedText === "") return;
+
+            const emoji = isOops ? '🔴 ' : '🟢 ';
+            const fullTitle = emoji + updatedText;
+            const locationVal = document.getElementById(`edit-location-${id}`).value.trim() || null;
+            
+            let priorityVal = null;
+            let dueDateVal = null;
+            if (isOops) {
+                priorityVal = document.getElementById(`edit-priority-${id}`).value;
+                dueDateVal = document.getElementById(`edit-date-${id}`).value || null;
+            }
+
+            const payload = { title: fullTitle, location: locationVal, priority: priorityVal, due_date: dueDateVal };
+
+            try {
+                const response = await fetch(`${API_URL}/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (response.ok) { editingTodoId = null; fetchTodos(); return; }
+            } catch (error) {
+                localTodos = localTodos.map(todo => {
+                    if (todo.id === id) return { ...todo, title: fullTitle, location: locationVal, priority: priorityVal, due_date: dueDateVal };
+                    return todo;
+                });
+                editingTodoId = null;
+                renderTodos(localTodos);
+            }
+        }
+
+        // פונקציה ראשית שמוסיפה דיווח חדש
+        async function addDogEvent(type) {
+            if (type === 'good' && clickerSound) {
+                clickerSound.currentTime = 0;
+                clickerSound.play().catch(err => console.log(err));
+            } else if (type === 'oops' && oopsSound) {
+                oopsSound.currentTime = 0;
+                oopsSound.play().catch(err => console.log(err));
+            }
+
             const input = document.getElementById('todo-input');
-            const title = input.value.trim();
-            if (title === "") return;
+            const text = input.value.trim();
+            if (text === "") return;
+
+            const fullTitle = (type === 'good' ? '🟢 ' : '🔴 ') + text;
+            const priorityVal = (type === 'oops') ? document.getElementById('todo-priority').value : null;
+            const dueDateVal = (type === 'oops') ? document.getElementById('todo-duedate').value : null;
+            const locationVal = document.getElementById('todo-location').value.trim() || null;
+
+            const payload = { 
+                title: fullTitle, 
+                priority: priorityVal, 
+                due_date: dueDateVal, 
+                location: locationVal,
+                gps_link: currentGpsLink // הוספת הקישור מהמשתנה הגלובלי
+            };
+
+            // איפוס מראה הכפתור של ה-GPS לאחר השליחה
+            const resetGpsUI = () => {
+                currentGpsLink = null;
+                const btn = document.getElementById('gps-btn');
+                btn.innerText = '🛰️ צרף מיקום';
+                btn.classList.remove('success');
+            };
 
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title: title })
+                    body: JSON.stringify(payload)
                 });
                 if (response.ok) {
                     input.value = "";
+                    document.getElementById('todo-location').value = "";
+                    resetGpsUI();
                     fetchTodos();
+                    return;
                 }
             } catch (error) {
-                console.error('Error adding todo:', error);
+                const localTime = new Date().toISOString();
+                const newLocalTodo = { "id": Date.now(), "title": fullTitle, "created_at": localTime, "priority": priorityVal, "due_date": dueDateVal, "location": locationVal, "gps_link": currentGpsLink };
+                localTodos.push(newLocalTodo);
+                input.value = "";
+                document.getElementById('todo-location').value = "";
+                resetGpsUI();
+                renderTodos(localTodos);
             }
         }
 
-        async function deleteTodo(id) {
-            try {
-                const response = await fetch(`${API_URL}/${id}`, {
-                    method: 'DELETE'
-                });
-                if (response.ok) {
-                    fetchTodos();
-                }
-            } catch (error) {
-                console.error('Error deleting todo:', error);
-            }
-        }
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        document.getElementById('todo-duedate').value = tomorrow.toISOString().split('T')[0];
 
         window.onload = fetchTodos;
     </script>
