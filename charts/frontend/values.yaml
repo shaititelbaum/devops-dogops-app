@@ -1,0 +1,43 @@
+replicaCount: 1
+
+image:
+  repository: 480891637713.dkr.ecr.us-east-1.amazonaws.com/devops-dogops-frontend
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets:
+  - name: ecr-registry-secret
+
+nameOverride: ""
+fullnameOverride: "devops-dogops-frontend"
+
+service:
+  type: ClusterIP
+  port: 80 
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  hosts:
+    - host: dogops.local
+      paths:
+        - path: /
+          pathType: Prefix
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+autoscaling:
+  enabled: false
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
