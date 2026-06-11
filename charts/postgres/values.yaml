@@ -21,4 +21,12 @@ resources:
     memory: 512Mi
   requests:
     cpu: 250m
+<<<<<<< HEAD
     memory: 256Mi
+
+persistence:
+  enabled: true
+  size: 2Gi
+=======
+    memory: 256Mi
+>>>>>>> master

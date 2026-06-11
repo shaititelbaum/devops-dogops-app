@@ -32,6 +32,12 @@ spec:
                 secretKeyRef:
                   name: postgres-secret
                   key: password
+<<<<<<< HEAD
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+=======
+>>>>>>> master
           readinessProbe:
             tcpSocket:
               port: 5432
@@ -43,4 +49,12 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 20
           resources:
+<<<<<<< HEAD
             {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: {{ include "postgres.fullname" . }}-pvc
+=======
+            {{- toYaml .Values.resources | nindent 12 }}
+>>>>>>> master
