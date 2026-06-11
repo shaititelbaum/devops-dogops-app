@@ -2,31 +2,21 @@ replicaCount: 1
 
 image:
   repository: postgres
-  pullPolicy: IfNotPresent
   tag: "15-alpine"
-
-fullnameOverride: "postgres-service"
-
-service:
-  type: ClusterIP
-  port: 5432
+  pullPolicy: IfNotPresent
 
 env:
-  POSTGRES_USER: "ShaiAdmin"
   POSTGRES_DB: "dogopsdb"
+  POSTGRES_USER: "ShaiAdmin"
 
 resources:
   limits:
-    cpu: 500m
-    memory: 512Mi
+    cpu: "500m"
+    memory: "512Mi"
   requests:
-    cpu: 250m
-<<<<<<< HEAD
-    memory: 256Mi
+    cpu: "250m"
+    memory: "256Mi"
 
 persistence:
   enabled: true
-  size: 2Gi
-=======
-    memory: 256Mi
->>>>>>> master
+  size: "2Gi"
