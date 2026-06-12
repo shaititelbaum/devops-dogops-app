@@ -7,12 +7,15 @@ body {
     background-position: center;
     background-attachment: fixed;
     margin: 0;
-    min-height: 100vh;
-    padding: 2vh 0; 
+    
+    /* נועלים את המסך לחלוטין לגובה התצוגה בלי גלילה חיצונית */
+    height: 100vh;
+    overflow: hidden; 
     box-sizing: border-box;
+    
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start; /* משאיר את הכל מעוגן כלפי מעלה */
 }
 
 .todo-container {
@@ -25,12 +28,20 @@ body {
     width: 100%;
     max-width: 450px;
     border: 1px solid rgba(255, 255, 255, 0.3);
-    transition: max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    max-height: 90vh; 
+    
+    /* התיקון הקריטי למרווחים: */
+    margin-top: 8vh; /* רווח בטוח ויפה מלמעלה */
+    margin-bottom: 5vh; /* רווח בטוח מהרצפה - לעולם לא ייגע למטה! */
+    
+    min-height: 55vh;
+    max-height: 80vh; /* מונע מהקופסה לעבור את הגובה המותר */
+    
+    transition: max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1), min-height 0.3s ease;
     display: flex;
     flex-direction: column;
 }
 
+/* החזרת ה-wide-mode שמרחיב את החלון בצורה חיה */
 .todo-container.wide-mode {
     max-width: 700px;
 }
@@ -67,24 +78,37 @@ h1 {
 
 .nav-menu {
     display: flex;
+    justify-content: center; /* ממרכז את הכפתורים בפנים */
     background: rgba(0, 0, 0, 0.2);
     border-radius: 30px;
     padding: 4px;
-    margin-bottom: 25px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     flex-shrink: 0;
+    gap: 2px;
+    overflow-x: auto; 
+    white-space: nowrap;
+    scrollbar-width: none;
+    /* התיקון הקריטי: התפריט נשאר תמיד באותו רוחב וממורכז, אז הוא לא יזוז מילימטר */
+    width: 100%;
+    max-width: 390px; 
+    margin: 0 auto 15px auto; 
+}
+
+.nav-menu::-webkit-scrollbar {
+    display: none; 
 }
 
 .nav-item {
-    flex: 1;
+    flex: 0 0 auto; 
+    padding: 8px 16px; 
+    font-size: 12px;
+    white-space: nowrap;
+    border-radius: 20px;
+    cursor: pointer;
+    border: none;
     background: transparent;
     color: #cbd5e1;
-    padding: 8px 0;
-    font-size: 14px;
-    font-weight: 600;
-    border-radius: 25px;
-    box-shadow: none;
-    text-shadow: none;
+    transition: all 0.2s;
 }
 
 .nav-item:hover {
@@ -94,7 +118,7 @@ h1 {
 .nav-item.active {
     background: white;
     color: #0f172a;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    font-weight: bold;
 }
 
 #input-section {
@@ -238,19 +262,23 @@ button:active {
 }
 
 /* ==========================================
-   הגדרות גלילה (Scroll) - התיקון שביקשת!
+   הגדרות גלילה (Scroll) - תיקון קפיצות
    ========================================== */
 
-#history-section, #vaccine-section {
+#history-section, #vaccine-section, #ai-section {
+    display: none; 
+    flex-direction: column;
+    /* תיקון קפיצות 2: האזורים ממלאים את הגובה הקבוע */
+    flex: 1;
+    min-height: 0;
     overflow: hidden; 
-    flex-grow: 1;
 }
 
 #todo-list-container, #vaccine-list-container {
     overflow-y: auto;
     padding-right: 5px;
     flex-grow: 1;
-    height: 100%;
+    min-height: 0;
 }
 
 #todo-list-container::-webkit-scrollbar, 
@@ -578,7 +606,10 @@ li {
     border-radius: 12px;
     border: 1px dashed rgba(255, 255, 255, 0.3);
     margin-bottom: 15px;
-    display: none; /* מוסתר כברירת מחדל */
+    display: none; 
+    /* התיקון כאן: הצרת הטופס ומרכוז */
+    width: 80%;
+    margin: 0 auto 15px auto;
 }
 
 .vaccine-add-form.active {
@@ -590,6 +621,10 @@ li {
     border: 1px solid rgba(56, 189, 248, 0.4);
     color: #bae6fd;
     margin-bottom: 15px;
+    /* התיקון כאן: הצרת הכפתור ומרכוז */
+    width: 60%;
+    margin: 0 auto 15px auto;
+    display: block;
 }
 
 .btn-toggle-form:hover {
@@ -599,4 +634,175 @@ li {
 .btn-submit-vaccine {
     background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     margin-top: 10px;
+}
+
+/* ==========================================
+   עיצוב עוזר ה-AI (AI Assistant Log)
+   ========================================== */
+
+#ai-section {
+    display: none;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    flex-grow: 1;
+}
+
+/* כפתורי טיפים מהירים */
+.ai-quick-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+    overflow-x: auto;
+    padding-bottom: 5px;
+    
+    /* התיקון הקריטי: אוסר על הצ'אט למעוך את הכפתורים האלו */
+    flex-shrink: 0; 
+}
+
+.ai-quick-actions::-webkit-scrollbar {
+    height: 4px;
+}
+.ai-quick-actions::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+}
+
+.ai-chip {
+    background: rgba(56, 189, 248, 0.15);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    color: #bae6fd;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: none;
+    flex: none;
+}
+
+.ai-chip:hover {
+    background: rgba(56, 189, 248, 0.4);
+    color: white;
+}
+
+.ai-chip.special {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: rgba(245, 158, 11, 0.5);
+    color: #fde68a;
+    font-weight: bold;
+}
+
+.ai-chip.special:hover {
+    background: rgba(245, 158, 11, 0.4);
+}
+
+/* אזור הצ'אט */
+#ai-chat-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ai-message {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.4;
+    color: white;
+    word-wrap: break-word;
+}
+
+.ai-message.bot {
+    align-self: flex-start;
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    border-bottom-left-radius: 2px;
+}
+
+.ai-message.user {
+    align-self: flex-end;
+    background: rgba(59, 130, 246, 0.3);
+    border: 1px solid rgba(59, 130, 246, 0.5);
+    border-bottom-right-radius: 2px;
+}
+
+.ai-typing {
+    font-size: 12px;
+    color: #cbd5e1;
+    font-style: italic;
+    align-self: flex-start;
+    display: none;
+}
+
+/* שורת ההקלדה למטה */
+.ai-input-wrapper {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+    padding: 4px;
+}
+
+.ai-input-wrapper input {
+    margin: 0;
+}
+/* --- כפתור שליחה בעיצוב זכוכית (Glassmorphism) - התיקון הסופי לבאג הריבוע --- */
+.ai-input-wrapper button {
+    flex: none;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
+    padding: 0;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    
+    /* הגדרות מיקום ובידוד החובה לטריק */
+    position: relative;
+    isolation: isolate; 
+    
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* הטריק: שכבת הטשטוש מופרדת לחלוטין מפעולת ההגדלה (hover) */
+.ai-input-wrapper button::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    border-radius: 50%;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    z-index: -1; /* שומר שהטשטוש יהיה מאחורי סמל כף הרגל */
+}
+
+/* אפקט ריחוף (רק הכפתור הראשי גדל, שכבת הטשטוש בפנים מתאימה את עצמה אוטומטית) */
+.ai-input-wrapper button:hover {
+    transform: scale(1.08) translateY(-2px);
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 6px 12px rgba(255, 255, 255, 0.1);
+}
+
+.ai-input-wrapper button:active {
+    transform: scale(0.95);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+#input-section, #history-section, #vaccine-section, #ai-section {
+    animation: fadeIn 0.3s ease-in-out;
 }

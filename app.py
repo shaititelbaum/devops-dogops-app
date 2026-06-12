@@ -1,3 +1,5 @@
+import os
+import google.generativeai as genai
 from flask import Flask, jsonify, request
 from datetime import datetime
 
@@ -25,21 +27,22 @@ todos = [
     }
 ]
 
-# --- נתוני דמו לחיסונים (הפיצ'ר החדש!) ---
+# --- נתוני דמו לחיסונים ---
 vaccines = [
     {
         "id": 1,
         "type": "משושה",
         "given_date": "2025-05-10",
-        "expiry_date": "2026-05-10" # פג תוקף!
-    },
-    {
-        "id": 2,
-        "type": "כלבת",
-        "given_date": "2025-12-01",
-        "expiry_date": "2026-12-01" # בתוקף
+        "expiry_date": "2026-05-10"
     }
 ]
+
+# --- הגדרת Gemini AI ---
+api_key = os.getenv("GOOGLE_API_KEY")
+if api_key:
+    genai.configure(api_key=api_key)
+    # תיקון 1: שינוי שם המודל למודל הנתמך והיציב
+    model = genai.GenerativeModel('gemini-pro')
 
 @app.route('/')
 def index():
@@ -50,9 +53,38 @@ def health_check():
     return jsonify({"status": "healthy"}), 200
 
 # ==========================================
-# Routes: Todos (Behavior Tracker)
+# Routes: AI Assistant
 # ==========================================
-
+@app.route('/api/chat', methods=['POST'])
+def chat_with_ai():
+    if not api_key:
+        return jsonify({"response": "מפתח ה-API של ה-AI לא הוגדר בשרת."}), 500
+    
+    data = request.json
+    user_message = data.get('message', '')
+    
+    try:
+        # קוד חכם: מבקש מגוגל את רשימת המודלים שזמינים למפתח הספציפי שלך
+        valid_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        
+        if not valid_models:
+            return jsonify({"error": "המפתח תקין, אך לא נמצאו מודלי טקסט שפתוחים עבורו."}), 500
+            
+        # בוחר אוטומטית את המודל הראשון והתקין ברשימה
+        chosen_model = valid_models[0]
+        model = genai.GenerativeModel(chosen_model)
+        
+        prompt = f"אתה מאלף כלבים מומחה. המשתמש שאל: {user_message}. ענה בצורה תמציתית ומקצועית."
+        response = model.generate_content(prompt)
+        
+        return jsonify({"response": response.text}), 200
+        
+    except Exception as e:
+        return jsonify({"error": f"שגיאת תקשורת עם גוגל: {str(e)}"}), 500
+        
+# ==========================================
+# Routes: Todos
+# ==========================================
 @app.route('/api/todos', methods=['GET'])
 def get_todos():
     return jsonify(todos), 200
@@ -61,7 +93,6 @@ def get_todos():
 def create_todo():
     current_time = datetime.now().isoformat()
     data = request.json
-    
     new_todo = {
         "id": len(todos) + 1,
         "title": data['title'],
@@ -87,17 +118,16 @@ def update_todo(todo_id):
             return jsonify(todo), 200
     return jsonify({"error": "Event not found"}), 404
 
+# תיקון 2: הוספת סוגריים מרובעים סביב 'DELETE'
 @app.route('/api/todos/<int:todo_id>', methods=['DELETE'])
 def delete_todo(todo_id):
     global todos
     todos = [t for t in todos if t['id'] != todo_id]
     return jsonify({"result": True}), 200
 
-
 # ==========================================
-# Routes: Vaccines (Medical Log)
+# Routes: Vaccines
 # ==========================================
-
 @app.route('/api/vaccines', methods=['GET'])
 def get_vaccines():
     return jsonify(vaccines), 200
@@ -105,12 +135,9 @@ def get_vaccines():
 @app.route('/api/vaccines', methods=['POST'])
 def create_vaccine():
     data = request.json
-    
-    # במידה ולא נשלח תאריך פג תוקף, נגדיר אותו כברירת מחדל לשנה קדימה מתאריך הביצוע
     expiry_date = data.get('expiry_date')
     if not expiry_date:
         given_date_obj = datetime.strptime(data['given_date'], '%Y-%m-%d')
-        # מוסף 365 ימים כברירת מחדל לחיסון שנתי
         expiry_date = (given_date_obj.replace(year=given_date_obj.year + 1)).strftime('%Y-%m-%d')
 
     new_vaccine = {

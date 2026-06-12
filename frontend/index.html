@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DogOps - יומן מעקב התנהגות כלבים</title>
+    <title>DogOps - עתיד האילוף </title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -22,6 +22,7 @@
             <button id="tab-dashboard" class="nav-item active" onclick="switchView('dashboard')">📋 לוח דיווח</button>
             <button id="tab-history" class="nav-item" onclick="switchView('history')">📜 היסטוריה</button>
             <button id="tab-vaccines" class="nav-item" onclick="switchView('vaccines')">💉 פנקס רפואי</button>
+            <button id="tab-ai" class="nav-item" onclick="switchView('ai')">🤖 עוזר AI</button>
         </div>
         
         <div id="input-section">
@@ -58,7 +59,7 @@
             </div>
         </div>
 
-        <div id="history-section" style="display: none; flex-direction: column; flex-grow: 1; height: 100%;">
+        <div id="history-section" style="display: none;">
             <div class="filter-group">
                 <button class="filter-btn active" id="filter-all" onclick="setFilter('all')">הכל</button>
                 <button class="filter-btn" id="filter-good" onclick="setFilter('good')">🟢 כלב טוב</button>
@@ -69,7 +70,6 @@
 
         <div id="vaccine-section">
             <button class="btn-toggle-form" onclick="toggleVaccineForm()">➕ הוסף תיעוד רפואי חדש</button>
-            
             <div id="vaccine-form" class="vaccine-add-form">
                 <div class="advanced-inputs" style="margin-bottom: 0; background: transparent; border: none; padding: 0;">
                     <div class="input-subgroup full-width">
@@ -93,8 +93,25 @@
                 </div>
                 <button class="btn-submit-vaccine" onclick="addVaccine()">שמור טיפול</button>
             </div>
+            <div id="vaccine-list-container"></div>
+        </div>
 
-            <div id="vaccine-list-container" style="overflow-y: auto; flex-grow: 1; padding-right: 5px;"></div>
+        <div id="ai-section">
+            <div class="ai-quick-actions">
+                <button class="ai-chip special" onclick="submitAiMessage('אנא נתח את הדיווחים האחרונים שלי בהיסטוריה ותן לי המלצות להמשך אילוף.')">📊 נתח את התנהגות הכלב שלי</button>
+                <button class="ai-chip" onclick="submitAiMessage('איך ללמד את הכלב שלי להישאר במקום?')">🏠 איך ללמד 'למקום'?</button>
+                <button class="ai-chip" onclick="submitAiMessage('הכלב מושך ברצועה בטיולים, מה לעשות?')">🐕 משיכות ברצועה</button>
+            </div>
+            
+            <div id="ai-chat-container">
+                <div class="ai-message bot">היי! אני המאלף הווירטואלי שלכם 🐾<br>אפשר לשאול אותי שאלות, להתייעץ על התנהגות, או לבקש ממני לנתח את ההיסטוריה שתיעדת!</div>
+            </div>
+            <div id="ai-typing-indicator" class="ai-typing">המאלף חושב...</div>
+            
+            <div class="ai-input-wrapper">
+                <input type="text" id="ai-input" placeholder="שאל אותי על אילוף..." onkeypress="handleAiKeyPress(event)">
+                <button onclick="handleAiSubmit()" title="שלח">🐾</button>
+            </div>
         </div>
 
     </div>
@@ -110,32 +127,40 @@
         let editingTodoId = null;
         let currentGpsLink = null; 
 
-        // --- פונקציות ניווט ותצוגה ---
-        function switchView(viewName) {
+function switchView(viewName) {
             currentView = viewName;
             const container = document.getElementById('main-container');
             
-            // איפוס תצוגה
-            document.getElementById('input-section').style.display = 'none';
-            document.getElementById('history-section').style.display = 'none';
-            document.getElementById('vaccine-section').style.display = 'none';
-            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            const sectionMap = {
+                'dashboard': 'input-section',
+                'history': 'history-section',
+                'vaccines': 'vaccine-section',
+                'ai': 'ai-section'
+            };
+
+            const sections = ['input-section', 'history-section', 'vaccine-section', 'ai-section'];
             
-            if (viewName === 'history') {
-                document.getElementById('tab-history').classList.add('active');
-                document.getElementById('history-section').style.display = 'flex';
-                container.classList.add('wide-mode');
-                fetchTodos();
-            } else if (viewName === 'vaccines') {
-                document.getElementById('tab-vaccines').classList.add('active');
-                document.getElementById('vaccine-section').style.display = 'flex';
-                container.classList.add('wide-mode');
-                fetchVaccines();
-            } else {
-                document.getElementById('tab-dashboard').classList.add('active');
-                document.getElementById('input-section').style.display = 'block';
+            // מציגים רק את האזור הנבחר
+            sections.forEach(id => {
+                const el = document.getElementById(id);
+                el.style.display = (id === sectionMap[viewName]) ? 'flex' : 'none';
+                if (id === 'input-section' && viewName === 'dashboard') el.style.display = 'block';
+            });
+            
+            // ניהול ה-active בתפריט
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${viewName}`).classList.add('active');
+
+            // הוספה והסרה של wide-mode בשביל אנימציית ההתרחבות החיה שאתה אוהב!
+            if (viewName === 'dashboard') {
                 container.classList.remove('wide-mode');
+            } else {
+                container.classList.add('wide-mode');
             }
+
+            // משיכת נתונים מהשרת
+            if (viewName === 'history') fetchTodos();
+            if (viewName === 'vaccines') fetchVaccines();
         }
 
         function setFilter(filterValue) {
@@ -148,14 +173,80 @@
         }
 
         // ==========================================
-        // לוגיקת החיסונים (הפיצ'ר החדש!)
+        // לוגיקת AI (חיבור אמיתי לפייתון)
         // ==========================================
+        function handleAiKeyPress(event) {
+            if (event.key === 'Enter') handleAiSubmit();
+        }
 
+        function handleAiSubmit() {
+            const input = document.getElementById('ai-input');
+            const text = input.value.trim();
+            if (text) {
+                submitAiMessage(text);
+                input.value = '';
+            }
+        }
+
+        async function submitAiMessage(text) {
+            const chatContainer = document.getElementById('ai-chat-container');
+            const typingIndicator = document.getElementById('ai-typing-indicator');
+            
+            // הוספת הודעת המשתמש
+            const userMsg = document.createElement('div');
+            userMsg.className = 'ai-message user';
+            userMsg.innerText = text;
+            chatContainer.appendChild(userMsg);
+            
+            // גלילה למטה
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // הצגת "מקליד..."
+            typingIndicator.style.display = 'block';
+            
+            try {
+                // קריאה אמיתית לשרת הפייתון שלנו
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
+                
+                const data = await response.json();
+                
+                // הסתרת אנימציית ההקלדה
+                typingIndicator.style.display = 'none';
+                
+                // יצירת הודעת התשובה
+                const botMsg = document.createElement('div');
+                botMsg.className = 'ai-message bot';
+                
+                if (response.ok) {
+                    botMsg.innerText = data.response;
+                } else {
+                    botMsg.innerHTML = "🤖 שגיאה מהשרת:<br>" + (data.response || data.error);
+                }
+                
+                chatContainer.appendChild(botMsg);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                
+            } catch (error) {
+                typingIndicator.style.display = 'none';
+                const errorMsg = document.createElement('div');
+                errorMsg.className = 'ai-message bot';
+                errorMsg.innerText = "🤖 אופס... לא הצלחתי ליצור קשר עם השרת.";
+                chatContainer.appendChild(errorMsg);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        }
+
+        // ==========================================
+        // לוגיקת החיסונים
+        // ==========================================
         function toggleVaccineForm() {
             const form = document.getElementById('vaccine-form');
             form.classList.toggle('active');
             if(form.classList.contains('active')) {
-                // הגדרת תאריך להיום כברירת מחדל
                 document.getElementById('vac-given-date').value = new Date().toISOString().split('T')[0];
             }
         }
@@ -168,7 +259,6 @@
                 renderVaccines(vaccines);
             } catch (error) {
                 console.error("Could not fetch vaccines", error);
-                document.getElementById('vaccine-list-container').innerHTML = '<p style="color:white; text-align:center;">שגיאה בטעינת נתונים.</p>';
             }
         }
 
@@ -192,13 +282,12 @@
                 });
                 
                 if (response.ok) {
-                    toggleVaccineForm(); // סגירת הטופס
-                    document.getElementById('vac-expiry-date').value = ""; // ניקוי
-                    fetchVaccines(); // רענון הרשימה
+                    toggleVaccineForm(); 
+                    document.getElementById('vac-expiry-date').value = ""; 
+                    fetchVaccines(); 
                 }
             } catch (error) {
                 console.error("Failed to save vaccine", error);
-                alert("שגיאה בשמירה לשרת.");
             }
         }
 
@@ -210,7 +299,6 @@
             } catch (e) { console.error(e); }
         }
 
-        // פונקציית העזר שמחשבת את הסטטוס ומחזירה תגית רמזור
         function getStatusBadgeHtml(expiryDateStr) {
             if (!expiryDateStr) return '';
             
@@ -223,20 +311,14 @@
             const diffTime = expDate - today;
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-            if (diffDays < 0) {
-                return `<span class="status-badge status-expired">❌ פג תוקף! סכנה!</span>`;
-            } else if (diffDays <= 30) {
-                return `<span class="status-badge status-warning">⚠️ לפקוח עין: נותרו ${diffDays} ימים</span>`;
-            } else {
-                return `<span class="status-badge status-valid">✅ בתוקף</span>`;
-            }
+            if (diffDays < 0) return `<span class="status-badge status-expired">❌ פג תוקף! סכנה!</span>`;
+            else if (diffDays <= 30) return `<span class="status-badge status-warning">⚠️ לפקוח עין: נותרו ${diffDays} ימים</span>`;
+            else return `<span class="status-badge status-valid">✅ בתוקף</span>`;
         }
 
         function renderVaccines(vaccines) {
             const container = document.getElementById('vaccine-list-container');
             container.innerHTML = '';
-            
-            // מיון מהחדש לישן
             vaccines.sort((a, b) => new Date(b.given_date) - new Date(a.given_date));
 
             vaccines.forEach(vac => {
@@ -261,9 +343,8 @@
         }
 
         // ==========================================
-        // לוגיקת לוח הדיווח וההיסטוריה (קיים)
+        // לוגיקת הדיווח וההיסטוריה
         // ==========================================
-
         async function fetchTodos() {
             try {
                 const response = await fetch(API_URL);
@@ -297,7 +378,7 @@
             }
         }
 
-        async function addDogEvent(type) {
+async function addDogEvent(type) {
             if (type === 'good' && clickerSound) {
                 clickerSound.currentTime = 0;
                 clickerSound.play().catch(e=>{});
@@ -341,6 +422,10 @@
                 input.value = "";
                 document.getElementById('todo-location').value = "";
                 resetGpsUI();
+                
+                // התראה קטנה ונעימה שהדיווח עבד!
+                alert("הדיווח נשמר בהצלחה בהיסטוריה!"); 
+                
             } catch (error) {
                 console.error("Error adding event", error);
             }
