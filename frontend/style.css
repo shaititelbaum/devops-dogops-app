@@ -1039,3 +1039,87 @@ li {
 #ai-section .quick-actions-wrapper {
     margin-top: 2px;
 }
+
+/* ==========================================
+   עיצוב סיכומים יומיים
+   ========================================== */
+.summary-card {
+    background-color: rgba(15, 23, 42, 0.6);
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 8px;
+}
+
+.summary-date {
+    font-weight: bold;
+    color: #e2e8f0;
+    font-size: 16px;
+}
+
+.summary-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: bold;
+}
+
+.summary-badge.manual {
+    background: rgba(56, 189, 248, 0.2);
+    color: #bae6fd;
+    border: 1px solid rgba(56, 189, 248, 0.5);
+}
+
+.summary-badge.auto {
+    background: rgba(139, 92, 246, 0.2);
+    color: #c4b5fd;
+    border: 1px solid rgba(139, 92, 246, 0.5);
+}
+
+.summary-content {
+    color: #cbd5e1;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* ==========================================
+   עיצוב אחיד (זכוכית) לכפתורי מערכת ראשיים
+   (פנקס רפואי, עריכת פרופיל, והפקת סיכום)
+   ========================================== */
+.btn-toggle-form, 
+.btn-edit-profile, 
+#btn-manual-summary {
+    background: rgba(56, 189, 248, 0.15);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    color: #bae6fd;
+    width: 100%;
+    display: block;
+    box-shadow: none; /* ביטול ההצללה הכבדה של כפתורים רגילים */
+    font-size: 15px;
+    margin: 0 auto 15px auto;
+}
+
+/* התאמת מרווחים ספציפית למסך "הכלב שלי" */
+.btn-edit-profile {
+    margin-top: 10px;
+    margin-bottom: 0;
+}
+
+.btn-toggle-form:hover, 
+.btn-edit-profile:hover, 
+#btn-manual-summary:hover {
+    background: rgba(56, 189, 248, 0.3);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
+    transform: translateY(-2px);
+}

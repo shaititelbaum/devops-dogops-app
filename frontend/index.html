@@ -23,6 +23,7 @@
             <button id="tab-mydog" class="nav-item" onclick="switchView('mydog')">🐕 הכלב שלי</button>
             <button id="tab-history" class="nav-item" onclick="switchView('history')">📜 היסטוריה</button>
             <button id="tab-vaccines" class="nav-item" onclick="switchView('vaccines')">💉 פנקס רפואי</button>
+            <button id="tab-summaries" class="nav-item" onclick="switchView('summaries')">📝 סיכומים</button>
             <button id="tab-ai" class="nav-item" onclick="switchView('ai')">🤖 עוזר AI</button>
         </div>
         
@@ -190,6 +191,14 @@
             <div id="vaccine-list-container"></div>
         </div>
 
+        <div id="summaries-section" style="display: none; flex-direction: column; height: 100%;">
+            <button id="btn-manual-summary" onclick="generateManualSummary()">
+                ✨ הפק סיכום יומי להיום (ידני)
+            </button> 
+            <div id="summaries-typing" class="ai-typing" style="margin-bottom: 10px; text-align: center;">ה-AI מנתח את נתוני היום ומפיק סיכום...</div>
+            <div id="summaries-list-container" style="overflow-y: auto; flex-grow: 1; padding-right: 5px;"></div>
+        </div>
+
         <div id="ai-section">
             <div class="quick-actions-wrapper">
                 <select id="ai-quick-prompts-select" onchange="handleAiQuickPromptSelect()">
@@ -251,10 +260,11 @@
                 'mydog': 'mydog-section',
                 'history': 'history-section',
                 'vaccines': 'vaccine-section',
+                'summaries': 'summaries-section', // <--- חדש
                 'ai': 'ai-section'
             };
 
-            const sections = ['input-section', 'mydog-section', 'history-section', 'vaccine-section', 'ai-section'];
+            const sections = ['input-section', 'mydog-section', 'history-section', 'vaccine-section', 'summaries-section', 'ai-section'];
             
             // מציגים רק את האזור הנבחר
             sections.forEach(id => {
@@ -1080,7 +1090,147 @@ async function addDogEvent(type) {
         function closeManageAiPrompts() {
             document.getElementById('ai-quick-prompt-manage-ui').classList.add('hidden');
         }
+
+        // ==========================================
+        // לוגיקת סיכומים יומיים חכמים
+        // ==========================================
         
+        async function initSummariesView() {
+            await fetchTodos(); // מוודא שיש לנו את ההיסטוריה העדכנית
+            await loadAndRenderSummaries();
+            autoGenerateMissingSummaries();
+        }
+
+        async function loadAndRenderSummaries() {
+            try {
+                const response = await fetch('/api/summaries');
+                const summaries = await response.json();
+                renderSummariesList(summaries);
+                return summaries;
+            } catch (e) { console.error("Error loading summaries", e); return []; }
+        }
+
+        function renderSummariesList(summaries) {
+            const container = document.getElementById('summaries-list-container');
+            container.innerHTML = '';
+            
+            // מיון מהחדש לישן
+            summaries.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if (summaries.length === 0) {
+                container.innerHTML = '<div style="text-align:center; color:#94a3b8; margin-top:20px;">טרם הופקו סיכומים יומיים.</div>';
+                return;
+            }
+
+            summaries.forEach(sum => {
+                const badgeClass = sum.is_auto ? 'auto' : 'manual';
+                const badgeText = sum.is_auto ? '🤖 הופק אוטומטית' : '👤 הופק ידנית';
+                const dateIL = new Date(sum.date).toLocaleDateString('he-IL');
+
+                const div = document.createElement('div');
+                div.className = 'summary-card';
+                div.innerHTML = `
+                    <div class="summary-header">
+                        <span class="summary-date">📅 ${dateIL}</span>
+                        <span class="summary-badge ${badgeClass}">${badgeText}</span>
+                    </div>
+                    <div class="summary-content">${sum.text}</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        async function generateSummaryForDate(dateString, isAuto) {
+            // שולף דיווחים מה-API (אפשר גם לקחת מהמשתנה המקומי אם שמרת אותו, אבל בטוח יותר למשוך הכל)
+            const response = await fetch(API_URL);
+            const allTodos = await response.json();
+            
+            // מסנן רק אירועים של התאריך המבוקש
+            const eventsForDate = allTodos.filter(t => t.created_at.startsWith(dateString));
+            
+            if (eventsForDate.length === 0) {
+                if(!isAuto) alert("אין דיווחים בתאריך הזה כדי להפיק סיכום.");
+                return;
+            }
+
+            const eventsTextList = eventsForDate.map(t => t.title);
+
+            // שליחה ל-AI
+            const aiRes = await fetch('/api/summaries/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ events: eventsTextList })
+            });
+
+            if (!aiRes.ok) throw new Error("AI generation failed");
+            const aiData = await aiRes.json();
+
+            // שמירה בשרת
+            await fetch('/api/summaries', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date: dateString, text: aiData.summary, is_auto: isAuto })
+            });
+        }
+
+        async function generateManualSummary() {
+            const btn = document.getElementById('btn-manual-summary');
+            const typing = document.getElementById('summaries-typing');
+            
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            typing.style.display = 'block';
+
+            try {
+                const todayStr = new Date().toISOString().split('T')[0]; // "2026-06-14"
+                await generateSummaryForDate(todayStr, false);
+                await loadAndRenderSummaries();
+            } catch (e) {
+                alert("אירעה שגיאה בהפקת הסיכום.");
+                console.error(e);
+            } finally {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                typing.style.display = 'none';
+            }
+        }
+
+        // מנגנון אוטומטי שמשלים ימים חסרים כשהמשתמש נכנס למסך
+        async function autoGenerateMissingSummaries() {
+            const typing = document.getElementById('summaries-typing');
+            
+            try {
+                // מושכים את כל הדיווחים ואת כל הסיכומים
+                const todoRes = await fetch(API_URL);
+                const allTodos = await todoRes.json();
+                const summaries = await loadAndRenderSummaries();
+                
+                const existingSummaryDates = summaries.map(s => s.date);
+                const todayStr = new Date().toISOString().split('T')[0];
+
+                // מוצאים את כל התאריכים שיש בהם דיווחים (למעט היום - שאותו נשאיר למשתמש לעשות ידנית אם ירצה)
+                const datesWithEvents = [...new Set(allTodos.map(t => t.created_at.split('T')[0]))];
+                
+                const missingDates = datesWithEvents.filter(d => d !== todayStr && !existingSummaryDates.includes(d));
+
+                if (missingDates.length > 0) {
+                    typing.innerText = "ה-AI משלים סיכומים חסרים לימים קודמים...";
+                    typing.style.display = 'block';
+                    
+                    for (const date of missingDates) {
+                        await generateSummaryForDate(date, true);
+                    }
+                    
+                    await loadAndRenderSummaries();
+                }
+            } catch (e) {
+                console.error("Auto generation failed", e);
+            } finally {
+                typing.style.display = 'none';
+                typing.innerText = "ה-AI מנתח את נתוני היום ומפיק סיכום..."; // מחזיר למקור
+            }
+        }
+
     </script>
 </body>
 </html>

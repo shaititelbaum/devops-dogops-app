@@ -37,6 +37,9 @@ vaccines = [
     }
 ]
 
+# --- נתוני דמו לסיכומים יומיים ---
+summaries = []
+
 # --- הגדרת Gemini AI ---
 api_key = os.getenv("GOOGLE_API_KEY")
 if api_key:
@@ -154,6 +157,49 @@ def delete_vaccine(vaccine_id):
     global vaccines
     vaccines = [v for v in vaccines if v['id'] != vaccine_id]
     return jsonify({"result": True}), 200
+
+# ==========================================
+# Routes: Daily Summaries
+# ==========================================
+@app.route('/api/summaries', methods=['GET'])
+def get_summaries():
+    return jsonify(summaries), 200
+
+@app.route('/api/summaries', methods=['POST'])
+def create_summary():
+    global summaries
+    
+    data = request.json
+    new_summary = {
+        "id": len(summaries) + 1,
+        "date": data['date'],
+        "text": data['text'],
+        "is_auto": data.get('is_auto', False)
+    }
+
+    summaries = [s for s in summaries if s['date'] != data['date']]
+    summaries.append(new_summary)
+    return jsonify(new_summary), 201
+
+@app.route('/api/summaries/generate', methods=['POST'])
+def generate_summary():
+    if not api_key:
+        return jsonify({"error": "API Key missing"}), 500
+    
+    events = request.json.get('events', [])
+    if not events:
+        return jsonify({"error": "No events provided"}), 400
+        
+    events_text = "\n".join([f"- {e}" for e in events])
+    prompt = f"אתה מאלף כלבים מקצועי. להלן רשימת הדיווחים שנאספו היום על הכלב. כתוב סיכום יומי מקצועי, קצר ותמציתי (עד 3 משפטים) שמשקף את ההתנהגות שלו היום. \nהדיווחים:\n{events_text}"
+    
+    try:
+        valid_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        model = genai.GenerativeModel(valid_models[0])
+        response = model.generate_content(prompt)
+        return jsonify({"summary": response.text}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
