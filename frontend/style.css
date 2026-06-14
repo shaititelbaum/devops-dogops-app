@@ -952,3 +952,73 @@ li {
 .profile-pic-container.disabled .profile-pic-overlay {
     display: none;
 }
+
+/* ==========================================
+   עיצוב תפריט דיווחים מהירים
+   ========================================== */
+.quick-actions-wrapper {
+    margin-top: -4px; /* מצמיד את התפריט קצת יותר לשורת ההקלדה */
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+#quick-events-select {
+    width: 100%;
+    padding: 10px 14px;
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e2e8f0;
+    border-radius: 12px;
+    font-size: 14px;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#quick-events-select:focus {
+    border-color: #3b82f6;
+    background: rgba(0, 0, 0, 0.4);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+/* --- עיצוב להוספה ולניהול של דיווחים מהירים --- */
+.quick-inline-ui {
+    background: rgba(30, 41, 59, 0.95);
+    border: 1px solid rgba(59, 130, 246, 0.5);
+    padding: 15px;
+    border-radius: 12px;
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+    animation: fadeIn 0.2s ease-in-out;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+.manage-ui-container {
+    flex-direction: column;
+}
+
+.quick-inline-ui input[type="text"] {
+    flex: 1;
+    padding: 10px 12px;
+    font-size: 14px;
+    margin: 0;
+}
+
+.manage-event-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: center;
+}
+
+.manage-event-row input {
+    background: rgba(0, 0, 0, 0.4) !important;
+}
+
+.manage-event-row button {
+    flex: none;
+    padding: 10px;
+    font-size: 14px;
+}

@@ -31,6 +31,24 @@
                 <input type="text" id="todo-input" placeholder="מה הכלב עשה עכשיו? (למשל: משך ברצועה...)">
             </div>
 
+            <div class="quick-actions-wrapper">
+                <select id="quick-events-select" onchange="handleQuickEventSelect()">
+                    <option value="" disabled selected>⚡ דיווח מהיר (נטען...)</option>
+                </select>
+
+                <div id="quick-event-inline-add" class="hidden quick-inline-ui">
+                    <input type="text" id="new-quick-event-input" placeholder="למשל: תקף את השואב אבק...">
+                    <button class="save-btn" onclick="saveInlineQuickEvent()">שמור</button>
+                    <button class="cancel-btn" onclick="cancelInlineQuickEvent()">ביטול</button>
+                </div>
+
+                <div id="quick-event-manage-ui" class="hidden quick-inline-ui manage-ui-container">
+                    <div style="font-size: 13px; margin-bottom: 12px; color: #bae6fd; font-weight: bold;">🛠️ ערוך או מחק דיווחים:</div>
+                    <div id="manage-events-list"></div>
+                    <button onclick="closeManageEvents()" class="cancel-btn" style="margin-top: 10px; width: 100%;">סגור ניהול</button>
+                </div>
+            </div>
+
             <div class="advanced-inputs">
                 <div class="input-subgroup">
                     <label for="todo-priority">🎯 חשיבות לעבודה:</label>
@@ -200,7 +218,12 @@
         let currentGpsLink = null; 
 
         // קריאה ראשונית לטעינת פרטי הכלב
-        document.addEventListener('DOMContentLoaded', loadDogProfile);
+       // קריאה ראשונית לטעינת נתונים עם עליית הדף
+        // קריאה ראשונית לטעינת נתונים עם עליית הדף
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDogProfile();
+            initQuickEvents(); // <--- שינינו את השם של הפונקציה כאן
+        }); 
 
         function switchView(viewName) {
             currentView = viewName;
@@ -722,6 +745,136 @@ async function addDogEvent(type) {
             } else {
                 setProfileState(true);
             }
+        }
+
+        // ==========================================
+        // לוגיקת דיווחים מהירים (Quick Events)
+        // ==========================================
+        
+        const DEFAULT_QUICK_EVENTS = [
+            "💩 עשה צרכים בחוץ",
+            "🐕 משך חזק ברצועה",
+            "🗣️ נבח על כלב אחר",
+            "✨ הגיב יפה לפקודה 'אלי'"
+        ];
+
+        function initQuickEvents() {
+            let events = JSON.parse(localStorage.getItem('dogOpsQuickEvents'));
+            // אם זו פעם ראשונה באפליקציה, נטען את רשימת ברירת המחדל
+            if (!events || events.length === 0) {
+                localStorage.setItem('dogOpsQuickEvents', JSON.stringify(DEFAULT_QUICK_EVENTS));
+            }
+            renderQuickEventsDropdown();
+        }
+
+        function renderQuickEventsDropdown() {
+            const select = document.getElementById('quick-events-select');
+            select.innerHTML = '<option value="" disabled selected>⚡ דיווח מהיר (בחר מהרשימה...)</option>';
+            
+            let events = JSON.parse(localStorage.getItem('dogOpsQuickEvents') || '[]');
+            events.forEach((text, index) => {
+                const opt = document.createElement('option');
+                opt.value = index; 
+                opt.text = text;
+                select.appendChild(opt);
+            });
+
+            const addOpt = document.createElement('option');
+            addOpt.value = "add_new";
+            addOpt.text = "➕ הוסף אירוע מהיר לרשימה...";
+            select.appendChild(addOpt);
+
+            const manageOpt = document.createElement('option');
+            manageOpt.value = "manage";
+            manageOpt.text = "🛠️ נהל רשימה (ערוך/מחק)...";
+            select.appendChild(manageOpt);
+        }
+
+        function handleQuickEventSelect() {
+            const select = document.getElementById('quick-events-select');
+            const value = select.value;
+            const mainInput = document.getElementById('todo-input');
+
+            // הסתרת תפריטים
+            document.getElementById('quick-event-inline-add').classList.add('hidden');
+            document.getElementById('quick-event-manage-ui').classList.add('hidden');
+
+            if (value === 'add_new') {
+                document.getElementById('quick-event-inline-add').classList.remove('hidden');
+                document.getElementById('new-quick-event-input').focus();
+                select.selectedIndex = 0;
+            } else if (value === 'manage') {
+                renderManageEvents();
+                document.getElementById('quick-event-manage-ui').classList.remove('hidden');
+                select.selectedIndex = 0;
+            } else if (value !== "") {
+                let events = JSON.parse(localStorage.getItem('dogOpsQuickEvents') || '[]');
+                mainInput.value = events[value]; 
+                select.selectedIndex = 0;
+            }
+        }
+
+        function saveInlineQuickEvent() {
+            const input = document.getElementById('new-quick-event-input');
+            const text = input.value.trim();
+            if (text) {
+                let events = JSON.parse(localStorage.getItem('dogOpsQuickEvents') || '[]');
+                events.push("⭐ " + text);
+                localStorage.setItem('dogOpsQuickEvents', JSON.stringify(events));
+                renderQuickEventsDropdown();
+                document.getElementById('todo-input').value = "⭐ " + text;
+                input.value = "";
+                document.getElementById('quick-event-inline-add').classList.add('hidden');
+            }
+        }
+
+        function cancelInlineQuickEvent() {
+            document.getElementById('new-quick-event-input').value = "";
+            document.getElementById('quick-event-inline-add').classList.add('hidden');
+        }
+
+        function renderManageEvents() {
+            const container = document.getElementById('manage-events-list');
+            container.innerHTML = '';
+            let events = JSON.parse(localStorage.getItem('dogOpsQuickEvents') || '[]');
+            
+            events.forEach((text, index) => {
+                const row = document.createElement('div');
+                row.className = 'manage-event-row';
+                // החלפת גרשיים כדי שלא ישברו את הקוד
+                const safeText = text.replace(/"/g, '&quot;');
+                row.innerHTML = `
+                    <input type="text" id="manage-input-${index}" value="${safeText}">
+                    <button class="save-btn" onclick="saveEditQuickEvent(${index})" title="שמור שינוי">💾</button>
+                    <button class="delete-btn" onclick="deleteQuickEvent(${index})" title="מחק">🗑️</button>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function saveEditQuickEvent(index) {
+            const newVal = document.getElementById(`manage-input-${index}`).value.trim();
+            if (newVal) {
+                let events = JSON.parse(localStorage.getItem('dogOpsQuickEvents') || '[]');
+                events[index] = newVal;
+                localStorage.setItem('dogOpsQuickEvents', JSON.stringify(events));
+                renderQuickEventsDropdown();
+                renderManageEvents(); 
+            }
+        }
+
+        function deleteQuickEvent(index) {
+            if(confirm("למחוק דיווח זה מהרשימה?")) {
+                let events = JSON.parse(localStorage.getItem('dogOpsQuickEvents') || '[]');
+                events.splice(index, 1);
+                localStorage.setItem('dogOpsQuickEvents', JSON.stringify(events));
+                renderQuickEventsDropdown();
+                renderManageEvents();
+            }
+        }
+
+        function closeManageEvents() {
+            document.getElementById('quick-event-manage-ui').classList.add('hidden');
         }
         
     </script>
