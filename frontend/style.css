@@ -1022,3 +1022,15 @@ li {
     padding: 10px;
     font-size: 14px;
 }
+
+.quick-type-select {
+    flex: none;
+    width: auto;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    border-radius: 8px;
+    outline: none;
+    cursor: pointer;
+}

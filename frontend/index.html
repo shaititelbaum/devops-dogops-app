@@ -37,6 +37,10 @@
                 </select>
 
                 <div id="quick-event-inline-add" class="hidden quick-inline-ui">
+                    <select id="new-quick-event-type" class="quick-type-select">
+                        <option value="good">🟢</option>
+                        <option value="oops">🔴</option>
+                    </select>
                     <input type="text" id="new-quick-event-input" placeholder="למשל: תקף את השואב אבק...">
                     <button class="save-btn" onclick="saveInlineQuickEvent()">שמור</button>
                     <button class="cancel-btn" onclick="cancelInlineQuickEvent()">ביטול</button>
@@ -752,15 +756,27 @@ async function addDogEvent(type) {
         // ==========================================
         
         const DEFAULT_QUICK_EVENTS = [
-            "💩 עשה צרכים בחוץ",
-            "🐕 משך חזק ברצועה",
-            "🗣️ נבח על כלב אחר",
-            "✨ הגיב יפה לפקודה 'אלי'"
+            { text: "💩 עשה צרכים בחוץ", type: "good" },
+            { text: "✨ הגיב יפה לפקודה 'אלי'", type: "good" },
+            { text: "🐕 משך חזק ברצועה", type: "oops" },
+            { text: "🗣️ נבח על כלב אחר", type: "oops" }
         ];
 
         function initQuickEvents() {
             let events = JSON.parse(localStorage.getItem('dogOpsQuickEvents'));
-            // אם זו פעם ראשונה באפליקציה, נטען את רשימת ברירת המחדל
+            
+            // תאימות לאחור: המרת נתונים ישנים מהגרסה הקודמת (מערך טקסט) למערך אובייקטים
+            if (events && events.length > 0 && typeof events[0] === 'string') {
+                events = events.map(text => {
+                    let type = 'good'; 
+                    // ניחוש חכם לסוג האירוע לפי הטקסט הישן
+                    if (text.includes('משך') || text.includes('נבח') || text.includes('אופס') || text.includes('תקף')) type = 'oops';
+                    return { text: text, type: type };
+                });
+                localStorage.setItem('dogOpsQuickEvents', JSON.stringify(events));
+            }
+
+            // טעינה ראשונית
             if (!events || events.length === 0) {
                 localStorage.setItem('dogOpsQuickEvents', JSON.stringify(DEFAULT_QUICK_EVENTS));
             }
@@ -772,12 +788,48 @@ async function addDogEvent(type) {
             select.innerHTML = '<option value="" disabled selected>⚡ דיווח מהיר (בחר מהרשימה...)</option>';
             
             let events = JSON.parse(localStorage.getItem('dogOpsQuickEvents') || '[]');
-            events.forEach((text, index) => {
-                const opt = document.createElement('option');
-                opt.value = index; 
-                opt.text = text;
-                select.appendChild(opt);
-            });
+            
+            // מפריד לכלב טוב
+            const hasGood = events.some(ev => ev.type === 'good');
+            if (hasGood) {
+                const divGood = document.createElement('option');
+                divGood.disabled = true;
+                divGood.text = "▬▬▬ 🟢 כלב טוב ▬▬▬";
+                select.appendChild(divGood);
+                
+                events.forEach((ev, index) => {
+                    if (ev.type === 'good') {
+                        const opt = document.createElement('option');
+                        opt.value = index; 
+                        opt.text = ev.text;
+                        select.appendChild(opt);
+                    }
+                });
+            }
+
+            // מפריד לאופס
+            const hasOops = events.some(ev => ev.type === 'oops');
+            if (hasOops) {
+                const divOops = document.createElement('option');
+                divOops.disabled = true;
+                divOops.text = "▬▬▬ 🔴 אופס ▬▬▬";
+                select.appendChild(divOops);
+                
+                events.forEach((ev, index) => {
+                    if (ev.type === 'oops') {
+                        const opt = document.createElement('option');
+                        opt.value = index; 
+                        opt.text = ev.text;
+                        select.appendChild(opt);
+                    }
+                });
+            }
+
+            // מפריד לפעולות מערכת
+            const divActions = document.createElement('option');
+            divActions.disabled = true;
+            divActions.text = "▬▬▬ 🛠️ פעולות ▬▬▬";
+            select.appendChild(divActions);
 
             const addOpt = document.createElement('option');
             addOpt.value = "add_new";
@@ -786,7 +838,7 @@ async function addDogEvent(type) {
 
             const manageOpt = document.createElement('option');
             manageOpt.value = "manage";
-            manageOpt.text = "🛠️ נהל רשימה (ערוך/מחק)...";
+            manageOpt.text = "⚙️ נהל רשימה (ערוך/מחק)...";
             select.appendChild(manageOpt);
         }
 
@@ -795,7 +847,6 @@ async function addDogEvent(type) {
             const value = select.value;
             const mainInput = document.getElementById('todo-input');
 
-            // הסתרת תפריטים
             document.getElementById('quick-event-inline-add').classList.add('hidden');
             document.getElementById('quick-event-manage-ui').classList.add('hidden');
 
@@ -809,17 +860,18 @@ async function addDogEvent(type) {
                 select.selectedIndex = 0;
             } else if (value !== "") {
                 let events = JSON.parse(localStorage.getItem('dogOpsQuickEvents') || '[]');
-                mainInput.value = events[value]; 
+                mainInput.value = events[value].text; 
                 select.selectedIndex = 0;
             }
         }
 
         function saveInlineQuickEvent() {
             const input = document.getElementById('new-quick-event-input');
+            const typeSelect = document.getElementById('new-quick-event-type');
             const text = input.value.trim();
             if (text) {
                 let events = JSON.parse(localStorage.getItem('dogOpsQuickEvents') || '[]');
-                events.push("⭐ " + text);
+                events.push({ text: "⭐ " + text, type: typeSelect.value });
                 localStorage.setItem('dogOpsQuickEvents', JSON.stringify(events));
                 renderQuickEventsDropdown();
                 document.getElementById('todo-input').value = "⭐ " + text;
@@ -838,12 +890,16 @@ async function addDogEvent(type) {
             container.innerHTML = '';
             let events = JSON.parse(localStorage.getItem('dogOpsQuickEvents') || '[]');
             
-            events.forEach((text, index) => {
+            events.forEach((ev, index) => {
                 const row = document.createElement('div');
                 row.className = 'manage-event-row';
-                // החלפת גרשיים כדי שלא ישברו את הקוד
-                const safeText = text.replace(/"/g, '&quot;');
+                const safeText = ev.text.replace(/"/g, '&quot;');
+                
                 row.innerHTML = `
+                    <select id="manage-type-${index}" class="quick-type-select">
+                        <option value="good" ${ev.type === 'good' ? 'selected' : ''}>🟢</option>
+                        <option value="oops" ${ev.type === 'oops' ? 'selected' : ''}>🔴</option>
+                    </select>
                     <input type="text" id="manage-input-${index}" value="${safeText}">
                     <button class="save-btn" onclick="saveEditQuickEvent(${index})" title="שמור שינוי">💾</button>
                     <button class="delete-btn" onclick="deleteQuickEvent(${index})" title="מחק">🗑️</button>
@@ -854,9 +910,10 @@ async function addDogEvent(type) {
 
         function saveEditQuickEvent(index) {
             const newVal = document.getElementById(`manage-input-${index}`).value.trim();
+            const newType = document.getElementById(`manage-type-${index}`).value;
             if (newVal) {
                 let events = JSON.parse(localStorage.getItem('dogOpsQuickEvents') || '[]');
-                events[index] = newVal;
+                events[index] = { text: newVal, type: newType };
                 localStorage.setItem('dogOpsQuickEvents', JSON.stringify(events));
                 renderQuickEventsDropdown();
                 renderManageEvents(); 
