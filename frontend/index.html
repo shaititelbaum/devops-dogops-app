@@ -191,11 +191,23 @@
         </div>
 
         <div id="ai-section">
-            <div class="ai-quick-actions">
-                <button class="ai-chip special" onclick="submitAiMessage('אנא נתח את הדיווחים האחרונים שלי בהיסטוריה ותן לי המלצות להמשך אילוף.')">📊 נתח את התנהגות הכלב שלי</button>
-                <button class="ai-chip" onclick="submitAiMessage('איך ללמד את הכלב שלי להישאר במקום?')">🏠 איך ללמד 'למקום'?</button>
-                <button class="ai-chip" onclick="submitAiMessage('הכלב מושך ברצועה בטיולים, מה לעשות?')">🐕 משיכות ברצועה</button>
-            </div>
+            <div class="quick-actions-wrapper">
+                <select id="ai-quick-prompts-select" onchange="handleAiQuickPromptSelect()">
+                    <option value="" disabled selected>⚡ שאלות מהירות למאלף (נטען...)</option>
+                </select>
+
+                <div id="ai-quick-prompt-inline-add" class="hidden quick-inline-ui">
+                    <input type="text" id="new-ai-quick-prompt-input" placeholder="למשל: איך ללמד את הכלב 'ארצה'?">
+                    <button class="save-btn" onclick="saveInlineAiQuickPrompt()">שמור</button>
+                    <button class="cancel-btn" onclick="cancelInlineAiQuickPrompt()">ביטול</button>
+                </div>
+
+                <div id="ai-quick-prompt-manage-ui" class="hidden quick-inline-ui manage-ui-container">
+                    <div style="font-size: 13px; margin-bottom: 12px; color: #bae6fd; font-weight: bold;">🛠️ ערוך או מחק שאלות נפוצות:</div>
+                    <div id="manage-ai-prompts-list"></div>
+                    <button onclick="closeManageAiPrompts()" class="cancel-btn" style="margin-top: 10px; width: 100%;">סגור ניהול</button>
+                </div>
+            </div> 
             
             <div id="ai-chat-container">
                 <div class="ai-message bot">היי! אני המאלף הווירטואלי שלכם 🐾<br>אפשר לשאול אותי שאלות, להתייעץ על התנהגות, או לבקש ממני לנתח את ההיסטוריה שתיעדת!</div>
@@ -227,6 +239,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadDogProfile();
             initQuickEvents(); // <--- שינינו את השם של הפונקציה כאן
+            initAiQuickPrompts();
         }); 
 
         function switchView(viewName) {
@@ -932,6 +945,140 @@ async function addDogEvent(type) {
 
         function closeManageEvents() {
             document.getElementById('quick-event-manage-ui').classList.add('hidden');
+        }
+
+        // ==========================================
+        // לוגיקת שאלות AI מהירות (AI Quick Prompts)
+        // ==========================================
+        
+        const DEFAULT_AI_PROMPTS = [
+            "📊 אנא נתח את הדיווחים האחרונים בהיסטוריה ותן לי המלצות להמשך.",
+            "🏠 איך ללמד את הכלב להישאר 'למקום'?",
+            "🐕 הכלב מושך ברצועה בטיולים, מה עושים?",
+            "🦴 אילו צ'ופרים הכי מומלצים לאילוף?"
+        ];
+
+        function initAiQuickPrompts() {
+            let prompts = JSON.parse(localStorage.getItem('dogOpsAiPrompts'));
+            if (!prompts || prompts.length === 0) {
+                localStorage.setItem('dogOpsAiPrompts', JSON.stringify(DEFAULT_AI_PROMPTS));
+            }
+            renderAiQuickPromptsDropdown();
+        }
+
+        function renderAiQuickPromptsDropdown() {
+            const select = document.getElementById('ai-quick-prompts-select');
+            select.innerHTML = '<option value="" disabled selected>⚡ שאלה מהירה למאלף (בחר מהרשימה...)</option>';
+            
+            let prompts = JSON.parse(localStorage.getItem('dogOpsAiPrompts') || '[]');
+            
+            prompts.forEach((text, index) => {
+                const opt = document.createElement('option');
+                opt.value = index; 
+                opt.text = text;
+                select.appendChild(opt);
+            });
+
+            const divActions = document.createElement('option');
+            divActions.disabled = true;
+            divActions.text = "▬▬▬ 🛠️ פעולות ▬▬▬";
+            select.appendChild(divActions);
+
+            const addOpt = document.createElement('option');
+            addOpt.value = "add_new";
+            addOpt.text = "➕ הוסף שאלה מהירה לרשימה...";
+            select.appendChild(addOpt);
+
+            const manageOpt = document.createElement('option');
+            manageOpt.value = "manage";
+            manageOpt.text = "⚙️ נהל שאלות (ערוך/מחק)...";
+            select.appendChild(manageOpt);
+        }
+
+        function handleAiQuickPromptSelect() {
+            const select = document.getElementById('ai-quick-prompts-select');
+            const value = select.value;
+
+            document.getElementById('ai-quick-prompt-inline-add').classList.add('hidden');
+            document.getElementById('ai-quick-prompt-manage-ui').classList.add('hidden');
+
+            if (value === 'add_new') {
+                document.getElementById('ai-quick-prompt-inline-add').classList.remove('hidden');
+                document.getElementById('new-ai-quick-prompt-input').focus();
+                select.selectedIndex = 0;
+            } else if (value === 'manage') {
+                renderManageAiPrompts();
+                document.getElementById('ai-quick-prompt-manage-ui').classList.remove('hidden');
+                select.selectedIndex = 0;
+            } else if (value !== "") {
+                // שולף את הטקסט, שולח אוטומטית לצ'אט, ומאפס את התפריט!
+                let prompts = JSON.parse(localStorage.getItem('dogOpsAiPrompts') || '[]');
+                submitAiMessage(prompts[value]); 
+                select.selectedIndex = 0; 
+            }
+        }
+
+        function saveInlineAiQuickPrompt() {
+            const input = document.getElementById('new-ai-quick-prompt-input');
+            const text = input.value.trim();
+            if (text) {
+                let prompts = JSON.parse(localStorage.getItem('dogOpsAiPrompts') || '[]');
+                prompts.push("💡 " + text);
+                localStorage.setItem('dogOpsAiPrompts', JSON.stringify(prompts));
+                renderAiQuickPromptsDropdown();
+                input.value = "";
+                document.getElementById('ai-quick-prompt-inline-add').classList.add('hidden');
+            }
+        }
+
+        function cancelInlineAiQuickPrompt() {
+            document.getElementById('new-ai-quick-prompt-input').value = "";
+            document.getElementById('ai-quick-prompt-inline-add').classList.add('hidden');
+        }
+
+        function renderManageAiPrompts() {
+            const container = document.getElementById('manage-ai-prompts-list');
+            container.innerHTML = '';
+            let prompts = JSON.parse(localStorage.getItem('dogOpsAiPrompts') || '[]');
+            
+            prompts.forEach((text, index) => {
+                const row = document.createElement('div');
+                row.className = 'manage-event-row';
+                // מחליף מירכאות כפולות כדי שלא ישברו את התצוגה בעריכה
+                const safeText = text.replace(/"/g, '&quot;'); 
+                
+                row.innerHTML = `
+                    <input type="text" id="manage-ai-input-${index}" value="${safeText}">
+                    <button class="save-btn" onclick="saveEditAiQuickPrompt(${index})" title="שמור שינוי">💾</button>
+                    <button class="delete-btn" onclick="deleteAiQuickPrompt(${index})" title="מחק">🗑️</button>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function saveEditAiQuickPrompt(index) {
+            const newVal = document.getElementById(`manage-ai-input-${index}`).value.trim();
+            if (newVal) {
+                let prompts = JSON.parse(localStorage.getItem('dogOpsAiPrompts') || '[]');
+                prompts[index] = newVal;
+                localStorage.setItem('dogOpsAiPrompts', JSON.stringify(prompts));
+                renderAiQuickPromptsDropdown();
+                renderManageAiPrompts(); 
+            }
+        }
+
+        function deleteAiQuickPrompt(index) {
+            if(confirm("למחוק שאלה זו מהרשימה?")) {
+                let prompts = JSON.parse(localStorage.getItem('dogOpsAiPrompts') || '[]');
+                prompts.splice(index, 1);
+                localStorage.setItem('dogOpsAiPrompts', JSON.stringify(prompts));
+                renderAiQuickPromptsDropdown();
+                renderManageAiPrompts();
+            }
+        }
+
+        function closeManageAiPrompts() {
+            document.getElementById('ai-quick-prompt-manage-ui').classList.add('hidden');
         }
         
     </script>

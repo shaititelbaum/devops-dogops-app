@@ -962,7 +962,7 @@ li {
     width: 100%;
 }
 
-#quick-events-select {
+#quick-events-select, #ai-quick-prompts-select {
     width: 100%;
     padding: 10px 14px;
     background: rgba(30, 41, 59, 0.7);
@@ -976,7 +976,7 @@ li {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-#quick-events-select:focus {
+#quick-events-select:focus, #ai-quick-prompts-select:focus {
     border-color: #3b82f6;
     background: rgba(0, 0, 0, 0.4);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
@@ -1033,4 +1033,9 @@ li {
     border-radius: 8px;
     outline: none;
     cursor: pointer;
+}
+
+/* ביטול המרווח השלילי באזור ה-AI כדי שהתפריט לא ייחתך למעלה */
+#ai-section .quick-actions-wrapper {
+    margin-top: 2px;
 }
