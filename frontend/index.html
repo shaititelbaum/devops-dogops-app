@@ -23,12 +23,35 @@
             <button id="tab-mydog" class="nav-item" onclick="switchView('mydog')">🐕 הכלב שלי</button>
             <button id="tab-history" class="nav-item" onclick="switchView('history')">📜 היסטוריה</button>
             <button id="tab-vaccines" class="nav-item" onclick="switchView('vaccines')">💉 פנקס רפואי</button>
+            <button id="tab-summaries" class="nav-item" onclick="switchView('summaries')">📝 סיכומים</button>
             <button id="tab-ai" class="nav-item" onclick="switchView('ai')">🤖 עוזר AI</button>
         </div>
         
         <div id="input-section">
             <div class="input-group">
                 <input type="text" id="todo-input" placeholder="מה הכלב עשה עכשיו? (למשל: משך ברצועה...)">
+            </div>
+
+            <div class="quick-actions-wrapper">
+                <select id="quick-events-select" onchange="handleQuickEventSelect()">
+                    <option value="" disabled selected>⚡ דיווח מהיר (נטען...)</option>
+                </select>
+
+                <div id="quick-event-inline-add" class="hidden quick-inline-ui">
+                    <select id="new-quick-event-type" class="quick-type-select">
+                        <option value="good">🟢</option>
+                        <option value="oops">🔴</option>
+                    </select>
+                    <input type="text" id="new-quick-event-input" placeholder="למשל: תקף את השואב אבק...">
+                    <button class="save-btn" onclick="saveInlineQuickEvent()">שמור</button>
+                    <button class="cancel-btn" onclick="cancelInlineQuickEvent()">ביטול</button>
+                </div>
+
+                <div id="quick-event-manage-ui" class="hidden quick-inline-ui manage-ui-container">
+                    <div style="font-size: 13px; margin-bottom: 12px; color: #bae6fd; font-weight: bold;">🛠️ ערוך או מחק דיווחים:</div>
+                    <div id="manage-events-list"></div>
+                    <button onclick="closeManageEvents()" class="cancel-btn" style="margin-top: 10px; width: 100%;">סגור ניהול</button>
+                </div>
             </div>
 
             <div class="advanced-inputs">
@@ -60,14 +83,73 @@
             </div>
         </div>
 
-        <div id="mydog-section" style="display: none; flex-direction: column; align-items: center; padding: 10px; color: white;">
-            <h2 style="margin-bottom: 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">הכלב שלי 🐾</h2>
-            <div style="background: rgba(0, 0, 0, 0.2); padding: 25px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); width: 100%; max-width: 300px; text-align: right; line-height: 2.2; font-size: 16px;">
-                <p><strong>שם:</strong> ג'וי</p>
-                <p><strong>מין:</strong> זכר</p>
-                <p><strong>סטטוס:</strong> מסורס</p>
-                <p><strong>משקל:</strong> 30 ק"ג</p>
+        <div id="mydog-section">
+            <div id="profile-pic-wrapper" class="profile-pic-container" onclick="document.getElementById('dog-pic-input').click()" title="לחץ להחלפת תמונה">
+                <img id="dog-profile-pic" src="" alt="">
+                <div id="dog-pic-placeholder" class="pic-placeholder">🐕</div>
+                <div class="profile-pic-overlay">📷 עדכן תמונה</div>
+                <input type="file" id="dog-pic-input" accept="image/*" onchange="handleImageUpload(event)" hidden>
             </div>
+
+           <div class="dog-details-card">
+                <div class="input-subgroup full-width">
+                    <label>שם הכלב/ה:</label>
+                    <input type="text" id="dog-name" placeholder="למשל: ג'וי">
+                </div>
+                
+                <div class="input-subgroup full-width">
+                    <label>גזע:</label>
+                    <input type="text" id="dog-breed" placeholder="למשל: גולדן רטריבר">
+                </div>
+                
+                <div class="input-subgroup full-width">
+                    <label>גיל נוכחי:</label>
+                    <input type="text" id="dog-age" placeholder="יחושב אוטומטית לפי תאריך הלידה..." disabled>
+                </div>
+                
+                <div class="input-subgroup full-width">
+                    <label>תאריך לידה:</label>
+                    <input type="date" id="dog-dob" onchange="calculateDogAge()">
+                </div>
+                
+                <div class="input-subgroup full-width">
+                    <label>מין:</label>
+                    <select id="dog-gender">
+                        <option value="זכר">זכר</option>
+                        <option value="נקבה">נקבה</option>
+                    </select>
+                </div>
+                
+                <div class="input-subgroup full-width">
+                    <label>סטטוס רפואי:</label>
+                    <select id="dog-status">
+                        <option value="מסורס">מסורס</option>
+                        <option value="לא מסורס">לא מסורס</option>
+                        <option value="מעוקרת">מעוקרת</option>
+                        <option value="לא מעוקרת">לא מעוקרת</option> 
+                    </select>
+                </div>
+                
+                <div class="input-subgroup full-width">
+                    <label>משקל (בק"ג):</label>
+                    <input type="number" id="dog-weight" placeholder="למשל: 30" step="0.1">
+                </div>
+
+                <div class="input-subgroup full-width">
+                    <label>מספר שבב:</label>
+                    <input type="text" id="dog-chip" placeholder="למשל: 981020000000000">
+                </div>
+
+                <div class="input-subgroup full-width">
+                    <label>אלרגיות / הערות מיוחדות:</label>
+                    <input type="text" id="dog-allergies" placeholder="למשל: רגישות לעוף, אלרגיה לפרעושים...">
+                </div>
+                
+                <div class="profile-actions">
+                    <button id="btn-edit-profile" class="btn-edit-profile hidden" onclick="enableProfileEdit()">✏️ ערוך פרטים</button>
+                    <button id="btn-save-profile" class="btn-save-profile" onclick="saveDogProfile()">💾 שמור פרטים</button>
+                </div>
+            </div> 
         </div>
 
         <div id="history-section" style="display: none;">
@@ -85,13 +167,15 @@
                 <div class="advanced-inputs" style="margin-bottom: 0; background: transparent; border: none; padding: 0;">
                     <div class="input-subgroup full-width">
                         <label>סוג החיסון/טיפול:</label>
-                        <select id="vac-type">
+                        <select id="vac-type" onchange="handleVaccineTypeChange()"> 
                             <option value="משושה">💉 חיסון משושה</option>
                             <option value="כלבת">🚨 חיסון כלבת</option>
                             <option value="תולעת הפארק">🐛 תולעת הפארק (ספירוצירקה)</option>
                             <option value="שעלת">🤧 חיסון שעלת</option>
                             <option value="תילוע ופרעושים">💊 כדור תילוע / אמפולה</option>
+                            <option value="other">📝 אחר...</option> 
                         </select>
+                        <input type="text" id="vac-type-other" class="dynamic-text-input hidden" placeholder="הקלידו סוג טיפול">
                     </div>
                     <div class="input-subgroup">
                         <label>תאריך ביצוע:</label>
@@ -107,12 +191,32 @@
             <div id="vaccine-list-container"></div>
         </div>
 
+        <div id="summaries-section" style="display: none; flex-direction: column; height: 100%;">
+            <button id="btn-manual-summary" onclick="generateManualSummary()">
+                ✨ הפק סיכום יומי להיום (ידני)
+            </button> 
+            <div id="summaries-typing" class="ai-typing" style="margin-bottom: 10px; text-align: center;">ה-AI מנתח את נתוני היום ומפיק סיכום...</div>
+            <div id="summaries-list-container" style="overflow-y: auto; flex-grow: 1; padding-right: 5px;"></div>
+        </div>
+
         <div id="ai-section">
-            <div class="ai-quick-actions">
-                <button class="ai-chip special" onclick="submitAiMessage('אנא נתח את הדיווחים האחרונים שלי בהיסטוריה ותן לי המלצות להמשך אילוף.')">📊 נתח את התנהגות הכלב שלי</button>
-                <button class="ai-chip" onclick="submitAiMessage('איך ללמד את הכלב שלי להישאר במקום?')">🏠 איך ללמד 'למקום'?</button>
-                <button class="ai-chip" onclick="submitAiMessage('הכלב מושך ברצועה בטיולים, מה לעשות?')">🐕 משיכות ברצועה</button>
-            </div>
+            <div class="quick-actions-wrapper">
+                <select id="ai-quick-prompts-select" onchange="handleAiQuickPromptSelect()">
+                    <option value="" disabled selected>⚡ שאלות מהירות למאלף (נטען...)</option>
+                </select>
+
+                <div id="ai-quick-prompt-inline-add" class="hidden quick-inline-ui">
+                    <input type="text" id="new-ai-quick-prompt-input" placeholder="למשל: איך ללמד את הכלב 'ארצה'?">
+                    <button class="save-btn" onclick="saveInlineAiQuickPrompt()">שמור</button>
+                    <button class="cancel-btn" onclick="cancelInlineAiQuickPrompt()">ביטול</button>
+                </div>
+
+                <div id="ai-quick-prompt-manage-ui" class="hidden quick-inline-ui manage-ui-container">
+                    <div style="font-size: 13px; margin-bottom: 12px; color: #bae6fd; font-weight: bold;">🛠️ ערוך או מחק שאלות נפוצות:</div>
+                    <div id="manage-ai-prompts-list"></div>
+                    <button onclick="closeManageAiPrompts()" class="cancel-btn" style="margin-top: 10px; width: 100%;">סגור ניהול</button>
+                </div>
+            </div> 
             
             <div id="ai-chat-container">
                 <div class="ai-message bot">היי! אני המאלף הווירטואלי שלכם 🐾<br>אפשר לשאול אותי שאלות, להתייעץ על התנהגות, או לבקש ממני לנתח את ההיסטוריה שתיעדת!</div>
@@ -138,6 +242,15 @@
         let editingTodoId = null;
         let currentGpsLink = null; 
 
+        // קריאה ראשונית לטעינת פרטי הכלב
+       // קריאה ראשונית לטעינת נתונים עם עליית הדף
+        // קריאה ראשונית לטעינת נתונים עם עליית הדף
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDogProfile();
+            initQuickEvents(); // <--- שינינו את השם של הפונקציה כאן
+            initAiQuickPrompts();
+        }); 
+
         function switchView(viewName) {
             currentView = viewName;
             const container = document.getElementById('main-container');
@@ -147,10 +260,11 @@
                 'mydog': 'mydog-section',
                 'history': 'history-section',
                 'vaccines': 'vaccine-section',
+                'summaries': 'summaries-section', // <--- חדש
                 'ai': 'ai-section'
             };
 
-            const sections = ['input-section', 'mydog-section', 'history-section', 'vaccine-section', 'ai-section'];
+            const sections = ['input-section', 'mydog-section', 'history-section', 'vaccine-section', 'summaries-section', 'ai-section'];
             
             // מציגים רק את האזור הנבחר
             sections.forEach(id => {
@@ -258,6 +372,18 @@
         // ==========================================
         // לוגיקת החיסונים
         // ==========================================
+        // משיכת רשימת החיסונים מהשרת
+        async function fetchVaccines() {
+            try {
+                const response = await fetch(VACCINES_API_URL);
+                if (!response.ok) throw new Error('API failed');
+                const vaccines = await response.json();
+                renderVaccines(vaccines);
+            } catch (error) {
+                console.error("Error fetching vaccines:", error);
+            }
+        }
+        
         function toggleVaccineForm() {
             const form = document.getElementById('vaccine-form');
             form.classList.toggle('active');
@@ -266,19 +392,31 @@
             }
         }
 
-        async function fetchVaccines() {
-            try {
-                const response = await fetch(VACCINES_API_URL);
-                if (!response.ok) throw new Error('API failed');
-                const vaccines = await response.json();
-                renderVaccines(vaccines);
-            } catch (error) {
-                console.error("Could not fetch vaccines", error);
+        function handleVaccineTypeChange() {
+            const select = document.getElementById('vac-type');
+            const otherInput = document.getElementById('vac-type-other');
+            if (select.value === 'other') {
+                otherInput.classList.remove('hidden');
+            } else {
+                otherInput.classList.add('hidden');
+                otherInput.value = '';
             }
         }
 
-        async function addVaccine() {
-            const type = document.getElementById('vac-type').value;
+       async function addVaccine() {
+            // שמנו let במקום const כדי שנוכל לשנות את הערך
+            let type = document.getElementById('vac-type').value;
+
+            // --- התוספת שלנו עבור בחירת "אחר" ---
+            if (type === 'other') {
+                type = document.getElementById('vac-type-other').value.trim();
+                if (!type) {
+                    alert("חובה להקליד את סוג הטיפול!");
+                    return;
+                }
+            }
+            // ------------------------------------
+
             const givenDate = document.getElementById('vac-given-date').value;
             const expiryDate = document.getElementById('vac-expiry-date').value;
 
@@ -304,7 +442,7 @@
             } catch (error) {
                 console.error("Failed to save vaccine", error);
             }
-        }
+        } 
 
         async function deleteVaccine(id) {
             if(!confirm("למחוק תיעוד זה?")) return;
@@ -504,6 +642,594 @@ async function addDogEvent(type) {
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         document.getElementById('todo-duedate').value = tomorrow.toISOString().split('T')[0];
+
+        // ==========================================
+        // לוגיקת "הכלב שלי" (פרופיל ותמונה)
+        // ==========================================
+        
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imgElement = document.getElementById('dog-profile-pic');
+                imgElement.src = e.target.result;
+                imgElement.style.display = 'block';
+                document.getElementById('dog-pic-placeholder').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // פונקציה חכמה לחישוב גיל מדויק בשנים וחודשים
+        function calculateDogAge() {
+            const dobString = document.getElementById('dog-dob').value;
+            const ageInput = document.getElementById('dog-age');
+            
+            if (!dobString) {
+                ageInput.value = '';
+                return;
+            }
+            
+            const birthDate = new Date(dobString);
+            const today = new Date();
+            
+            // חישוב סך הכל החודשים שעברו
+            let totalMonths = (today.getFullYear() - birthDate.getFullYear()) * 12 + (today.getMonth() - birthDate.getMonth());
+            
+            // תיקון קטן: אם עדיין לא הגענו ליום בחודש שבו הוא נולד, נוריד חודש אחד
+            if (today.getDate() < birthDate.getDate()) {
+                totalMonths--;
+            }
+            
+            if (totalMonths < 0) {
+                ageInput.value = 'טרם נולד 🐾';
+                return;
+            }
+            
+            const years = Math.floor(totalMonths / 12);
+            const months = totalMonths % 12;
+            
+            let ageText = '';
+            if (years > 0) ageText += `${years} שנים`;
+            if (years > 0 && months > 0) ageText += ` ו-`;
+            if (months > 0) ageText += `${months} חודשים`;
+            if (years === 0 && months === 0) ageText = 'גור קטנטן!';
+            
+            ageInput.value = ageText;
+        }
+
+        // פונקציית הקסם: שולטת האם אפשר לערוך או לא
+        // פונקציית הקסם: שולטת האם אפשר לערוך או לא
+        function setProfileState(isEditing) {
+            // רשימת כל השדות (מעודכן עם השדות החדשים)
+            const inputs = ['dog-name', 'dog-breed', 'dog-dob', 'dog-gender', 'dog-status', 'dog-weight', 'dog-chip', 'dog-allergies'];
+            inputs.forEach(id => {
+                document.getElementById(id).disabled = !isEditing;
+            });
+            
+            const picWrapper = document.getElementById('profile-pic-wrapper');
+            const btnSave = document.getElementById('btn-save-profile');
+            const btnEdit = document.getElementById('btn-edit-profile');
+            
+            if (isEditing) {
+                picWrapper.classList.remove('disabled');
+                btnSave.classList.remove('hidden');
+                btnEdit.classList.add('hidden');
+            } else {
+                picWrapper.classList.add('disabled');
+                btnSave.classList.add('hidden');
+                btnEdit.classList.remove('hidden');
+            }
+        }
+
+        function enableProfileEdit() {
+            setProfileState(true);
+        }
+
+        function saveDogProfile() {
+            const imgElement = document.getElementById('dog-profile-pic');
+            
+            const profileData = {
+                name: document.getElementById('dog-name').value,
+                breed: document.getElementById('dog-breed').value,
+                dob: document.getElementById('dog-dob').value,
+                gender: document.getElementById('dog-gender').value,
+                status: document.getElementById('dog-status').value,
+                weight: document.getElementById('dog-weight').value,
+                chip: document.getElementById('dog-chip').value,
+                allergies: document.getElementById('dog-allergies').value,
+                image: imgElement.src.startsWith('data:') ? imgElement.src : null 
+            };
+
+            localStorage.setItem('dogOpsProfile', JSON.stringify(profileData));
+            
+            setProfileState(false);
+            alert("פרטי הכלב נשמרו בהצלחה!");
+        }
+
+        function loadDogProfile() {
+            const savedData = localStorage.getItem('dogOpsProfile');
+            if (savedData) {
+                const profile = JSON.parse(savedData);
+                document.getElementById('dog-name').value = profile.name || '';
+                document.getElementById('dog-breed').value = profile.breed || '';
+                document.getElementById('dog-dob').value = profile.dob || '';
+                calculateDogAge();
+                document.getElementById('dog-gender').value = profile.gender || 'זכר';
+                document.getElementById('dog-status').value = profile.status || 'מסורס';
+                document.getElementById('dog-weight').value = profile.weight || '';
+                document.getElementById('dog-chip').value = profile.chip || '';
+                document.getElementById('dog-allergies').value = profile.allergies || '';
+
+                if (profile.image) {
+                    const imgElement = document.getElementById('dog-profile-pic');
+                    imgElement.src = profile.image;
+                    imgElement.style.display = 'block';
+                    document.getElementById('dog-pic-placeholder').style.display = 'none';
+                }
+                setProfileState(false);
+            } else {
+                setProfileState(true);
+            }
+        }
+
+        // ==========================================
+        // לוגיקת דיווחים מהירים (Quick Events)
+        // ==========================================
+        
+        const DEFAULT_QUICK_EVENTS = [
+            { text: "💩 עשה צרכים בחוץ", type: "good" },
+            { text: "✨ הגיב יפה לפקודה 'אלי'", type: "good" },
+            { text: "🐕 משך חזק ברצועה", type: "oops" },
+            { text: "🗣️ נבח על כלב אחר", type: "oops" }
+        ];
+
+        function initQuickEvents() {
+            let events = JSON.parse(localStorage.getItem('dogOpsQuickEvents'));
+            
+            // תאימות לאחור: המרת נתונים ישנים מהגרסה הקודמת (מערך טקסט) למערך אובייקטים
+            if (events && events.length > 0 && typeof events[0] === 'string') {
+                events = events.map(text => {
+                    let type = 'good'; 
+                    // ניחוש חכם לסוג האירוע לפי הטקסט הישן
+                    if (text.includes('משך') || text.includes('נבח') || text.includes('אופס') || text.includes('תקף')) type = 'oops';
+                    return { text: text, type: type };
+                });
+                localStorage.setItem('dogOpsQuickEvents', JSON.stringify(events));
+            }
+
+            // טעינה ראשונית
+            if (!events || events.length === 0) {
+                localStorage.setItem('dogOpsQuickEvents', JSON.stringify(DEFAULT_QUICK_EVENTS));
+            }
+            renderQuickEventsDropdown();
+        }
+
+        function renderQuickEventsDropdown() {
+            const select = document.getElementById('quick-events-select');
+            select.innerHTML = '<option value="" disabled selected>⚡ דיווח מהיר (בחר מהרשימה...)</option>';
+            
+            let events = JSON.parse(localStorage.getItem('dogOpsQuickEvents') || '[]');
+            
+            // מפריד לכלב טוב
+            const hasGood = events.some(ev => ev.type === 'good');
+            if (hasGood) {
+                const divGood = document.createElement('option');
+                divGood.disabled = true;
+                divGood.text = "▬▬▬ 🟢 כלב טוב ▬▬▬";
+                select.appendChild(divGood);
+                
+                events.forEach((ev, index) => {
+                    if (ev.type === 'good') {
+                        const opt = document.createElement('option');
+                        opt.value = index; 
+                        opt.text = ev.text;
+                        select.appendChild(opt);
+                    }
+                });
+            }
+
+            // מפריד לאופס
+            const hasOops = events.some(ev => ev.type === 'oops');
+            if (hasOops) {
+                const divOops = document.createElement('option');
+                divOops.disabled = true;
+                divOops.text = "▬▬▬ 🔴 אופס ▬▬▬";
+                select.appendChild(divOops);
+                
+                events.forEach((ev, index) => {
+                    if (ev.type === 'oops') {
+                        const opt = document.createElement('option');
+                        opt.value = index; 
+                        opt.text = ev.text;
+                        select.appendChild(opt);
+                    }
+                });
+            }
+
+            // מפריד לפעולות מערכת
+            const divActions = document.createElement('option');
+            divActions.disabled = true;
+            divActions.text = "▬▬▬ 🛠️ פעולות ▬▬▬";
+            select.appendChild(divActions);
+
+            const addOpt = document.createElement('option');
+            addOpt.value = "add_new";
+            addOpt.text = "➕ הוסף אירוע מהיר לרשימה...";
+            select.appendChild(addOpt);
+
+            const manageOpt = document.createElement('option');
+            manageOpt.value = "manage";
+            manageOpt.text = "⚙️ נהל רשימה (ערוך/מחק)...";
+            select.appendChild(manageOpt);
+        }
+
+        function handleQuickEventSelect() {
+            const select = document.getElementById('quick-events-select');
+            const value = select.value;
+            const mainInput = document.getElementById('todo-input');
+
+            document.getElementById('quick-event-inline-add').classList.add('hidden');
+            document.getElementById('quick-event-manage-ui').classList.add('hidden');
+
+            if (value === 'add_new') {
+                document.getElementById('quick-event-inline-add').classList.remove('hidden');
+                document.getElementById('new-quick-event-input').focus();
+                select.selectedIndex = 0;
+            } else if (value === 'manage') {
+                renderManageEvents();
+                document.getElementById('quick-event-manage-ui').classList.remove('hidden');
+                select.selectedIndex = 0;
+            } else if (value !== "") {
+                let events = JSON.parse(localStorage.getItem('dogOpsQuickEvents') || '[]');
+                mainInput.value = events[value].text; 
+                select.selectedIndex = 0;
+            }
+        }
+
+        function saveInlineQuickEvent() {
+            const input = document.getElementById('new-quick-event-input');
+            const typeSelect = document.getElementById('new-quick-event-type');
+            const text = input.value.trim();
+            if (text) {
+                let events = JSON.parse(localStorage.getItem('dogOpsQuickEvents') || '[]');
+                events.push({ text: "⭐ " + text, type: typeSelect.value });
+                localStorage.setItem('dogOpsQuickEvents', JSON.stringify(events));
+                renderQuickEventsDropdown();
+                document.getElementById('todo-input').value = "⭐ " + text;
+                input.value = "";
+                document.getElementById('quick-event-inline-add').classList.add('hidden');
+            }
+        }
+
+        function cancelInlineQuickEvent() {
+            document.getElementById('new-quick-event-input').value = "";
+            document.getElementById('quick-event-inline-add').classList.add('hidden');
+        }
+
+        function renderManageEvents() {
+            const container = document.getElementById('manage-events-list');
+            container.innerHTML = '';
+            let events = JSON.parse(localStorage.getItem('dogOpsQuickEvents') || '[]');
+            
+            events.forEach((ev, index) => {
+                const row = document.createElement('div');
+                row.className = 'manage-event-row';
+                const safeText = ev.text.replace(/"/g, '&quot;');
+                
+                row.innerHTML = `
+                    <select id="manage-type-${index}" class="quick-type-select">
+                        <option value="good" ${ev.type === 'good' ? 'selected' : ''}>🟢</option>
+                        <option value="oops" ${ev.type === 'oops' ? 'selected' : ''}>🔴</option>
+                    </select>
+                    <input type="text" id="manage-input-${index}" value="${safeText}">
+                    <button class="save-btn" onclick="saveEditQuickEvent(${index})" title="שמור שינוי">💾</button>
+                    <button class="delete-btn" onclick="deleteQuickEvent(${index})" title="מחק">🗑️</button>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function saveEditQuickEvent(index) {
+            const newVal = document.getElementById(`manage-input-${index}`).value.trim();
+            const newType = document.getElementById(`manage-type-${index}`).value;
+            if (newVal) {
+                let events = JSON.parse(localStorage.getItem('dogOpsQuickEvents') || '[]');
+                events[index] = { text: newVal, type: newType };
+                localStorage.setItem('dogOpsQuickEvents', JSON.stringify(events));
+                renderQuickEventsDropdown();
+                renderManageEvents(); 
+            }
+        }
+
+        function deleteQuickEvent(index) {
+            if(confirm("למחוק דיווח זה מהרשימה?")) {
+                let events = JSON.parse(localStorage.getItem('dogOpsQuickEvents') || '[]');
+                events.splice(index, 1);
+                localStorage.setItem('dogOpsQuickEvents', JSON.stringify(events));
+                renderQuickEventsDropdown();
+                renderManageEvents();
+            }
+        }
+
+        function closeManageEvents() {
+            document.getElementById('quick-event-manage-ui').classList.add('hidden');
+        }
+
+        // ==========================================
+        // לוגיקת שאלות AI מהירות (AI Quick Prompts)
+        // ==========================================
+        
+        const DEFAULT_AI_PROMPTS = [
+            "📊 אנא נתח את הדיווחים האחרונים בהיסטוריה ותן לי המלצות להמשך.",
+            "🏠 איך ללמד את הכלב להישאר 'למקום'?",
+            "🐕 הכלב מושך ברצועה בטיולים, מה עושים?",
+            "🦴 אילו צ'ופרים הכי מומלצים לאילוף?"
+        ];
+
+        function initAiQuickPrompts() {
+            let prompts = JSON.parse(localStorage.getItem('dogOpsAiPrompts'));
+            if (!prompts || prompts.length === 0) {
+                localStorage.setItem('dogOpsAiPrompts', JSON.stringify(DEFAULT_AI_PROMPTS));
+            }
+            renderAiQuickPromptsDropdown();
+        }
+
+        function renderAiQuickPromptsDropdown() {
+            const select = document.getElementById('ai-quick-prompts-select');
+            select.innerHTML = '<option value="" disabled selected>⚡ שאלה מהירה למאלף (בחר מהרשימה...)</option>';
+            
+            let prompts = JSON.parse(localStorage.getItem('dogOpsAiPrompts') || '[]');
+            
+            prompts.forEach((text, index) => {
+                const opt = document.createElement('option');
+                opt.value = index; 
+                opt.text = text;
+                select.appendChild(opt);
+            });
+
+            const divActions = document.createElement('option');
+            divActions.disabled = true;
+            divActions.text = "▬▬▬ 🛠️ פעולות ▬▬▬";
+            select.appendChild(divActions);
+
+            const addOpt = document.createElement('option');
+            addOpt.value = "add_new";
+            addOpt.text = "➕ הוסף שאלה מהירה לרשימה...";
+            select.appendChild(addOpt);
+
+            const manageOpt = document.createElement('option');
+            manageOpt.value = "manage";
+            manageOpt.text = "⚙️ נהל שאלות (ערוך/מחק)...";
+            select.appendChild(manageOpt);
+        }
+
+        function handleAiQuickPromptSelect() {
+            const select = document.getElementById('ai-quick-prompts-select');
+            const value = select.value;
+
+            document.getElementById('ai-quick-prompt-inline-add').classList.add('hidden');
+            document.getElementById('ai-quick-prompt-manage-ui').classList.add('hidden');
+
+            if (value === 'add_new') {
+                document.getElementById('ai-quick-prompt-inline-add').classList.remove('hidden');
+                document.getElementById('new-ai-quick-prompt-input').focus();
+                select.selectedIndex = 0;
+            } else if (value === 'manage') {
+                renderManageAiPrompts();
+                document.getElementById('ai-quick-prompt-manage-ui').classList.remove('hidden');
+                select.selectedIndex = 0;
+            } else if (value !== "") {
+                // שולף את הטקסט, שולח אוטומטית לצ'אט, ומאפס את התפריט!
+                let prompts = JSON.parse(localStorage.getItem('dogOpsAiPrompts') || '[]');
+                submitAiMessage(prompts[value]); 
+                select.selectedIndex = 0; 
+            }
+        }
+
+        function saveInlineAiQuickPrompt() {
+            const input = document.getElementById('new-ai-quick-prompt-input');
+            const text = input.value.trim();
+            if (text) {
+                let prompts = JSON.parse(localStorage.getItem('dogOpsAiPrompts') || '[]');
+                prompts.push("💡 " + text);
+                localStorage.setItem('dogOpsAiPrompts', JSON.stringify(prompts));
+                renderAiQuickPromptsDropdown();
+                input.value = "";
+                document.getElementById('ai-quick-prompt-inline-add').classList.add('hidden');
+            }
+        }
+
+        function cancelInlineAiQuickPrompt() {
+            document.getElementById('new-ai-quick-prompt-input').value = "";
+            document.getElementById('ai-quick-prompt-inline-add').classList.add('hidden');
+        }
+
+        function renderManageAiPrompts() {
+            const container = document.getElementById('manage-ai-prompts-list');
+            container.innerHTML = '';
+            let prompts = JSON.parse(localStorage.getItem('dogOpsAiPrompts') || '[]');
+            
+            prompts.forEach((text, index) => {
+                const row = document.createElement('div');
+                row.className = 'manage-event-row';
+                // מחליף מירכאות כפולות כדי שלא ישברו את התצוגה בעריכה
+                const safeText = text.replace(/"/g, '&quot;'); 
+                
+                row.innerHTML = `
+                    <input type="text" id="manage-ai-input-${index}" value="${safeText}">
+                    <button class="save-btn" onclick="saveEditAiQuickPrompt(${index})" title="שמור שינוי">💾</button>
+                    <button class="delete-btn" onclick="deleteAiQuickPrompt(${index})" title="מחק">🗑️</button>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function saveEditAiQuickPrompt(index) {
+            const newVal = document.getElementById(`manage-ai-input-${index}`).value.trim();
+            if (newVal) {
+                let prompts = JSON.parse(localStorage.getItem('dogOpsAiPrompts') || '[]');
+                prompts[index] = newVal;
+                localStorage.setItem('dogOpsAiPrompts', JSON.stringify(prompts));
+                renderAiQuickPromptsDropdown();
+                renderManageAiPrompts(); 
+            }
+        }
+
+        function deleteAiQuickPrompt(index) {
+            if(confirm("למחוק שאלה זו מהרשימה?")) {
+                let prompts = JSON.parse(localStorage.getItem('dogOpsAiPrompts') || '[]');
+                prompts.splice(index, 1);
+                localStorage.setItem('dogOpsAiPrompts', JSON.stringify(prompts));
+                renderAiQuickPromptsDropdown();
+                renderManageAiPrompts();
+            }
+        }
+
+        function closeManageAiPrompts() {
+            document.getElementById('ai-quick-prompt-manage-ui').classList.add('hidden');
+        }
+
+        // ==========================================
+        // לוגיקת סיכומים יומיים חכמים
+        // ==========================================
+        
+        async function initSummariesView() {
+            await fetchTodos(); // מוודא שיש לנו את ההיסטוריה העדכנית
+            await loadAndRenderSummaries();
+            autoGenerateMissingSummaries();
+        }
+
+        async function loadAndRenderSummaries() {
+            try {
+                const response = await fetch('/api/summaries');
+                const summaries = await response.json();
+                renderSummariesList(summaries);
+                return summaries;
+            } catch (e) { console.error("Error loading summaries", e); return []; }
+        }
+
+        function renderSummariesList(summaries) {
+            const container = document.getElementById('summaries-list-container');
+            container.innerHTML = '';
+            
+            // מיון מהחדש לישן
+            summaries.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if (summaries.length === 0) {
+                container.innerHTML = '<div style="text-align:center; color:#94a3b8; margin-top:20px;">טרם הופקו סיכומים יומיים.</div>';
+                return;
+            }
+
+            summaries.forEach(sum => {
+                const badgeClass = sum.is_auto ? 'auto' : 'manual';
+                const badgeText = sum.is_auto ? '🤖 הופק אוטומטית' : '👤 הופק ידנית';
+                const dateIL = new Date(sum.date).toLocaleDateString('he-IL');
+
+                const div = document.createElement('div');
+                div.className = 'summary-card';
+                div.innerHTML = `
+                    <div class="summary-header">
+                        <span class="summary-date">📅 ${dateIL}</span>
+                        <span class="summary-badge ${badgeClass}">${badgeText}</span>
+                    </div>
+                    <div class="summary-content">${sum.text}</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        async function generateSummaryForDate(dateString, isAuto) {
+            // שולף דיווחים מה-API (אפשר גם לקחת מהמשתנה המקומי אם שמרת אותו, אבל בטוח יותר למשוך הכל)
+            const response = await fetch(API_URL);
+            const allTodos = await response.json();
+            
+            // מסנן רק אירועים של התאריך המבוקש
+            const eventsForDate = allTodos.filter(t => t.created_at.startsWith(dateString));
+            
+            if (eventsForDate.length === 0) {
+                if(!isAuto) alert("אין דיווחים בתאריך הזה כדי להפיק סיכום.");
+                return;
+            }
+
+            const eventsTextList = eventsForDate.map(t => t.title);
+
+            // שליחה ל-AI
+            const aiRes = await fetch('/api/summaries/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ events: eventsTextList })
+            });
+
+            if (!aiRes.ok) throw new Error("AI generation failed");
+            const aiData = await aiRes.json();
+
+            // שמירה בשרת
+            await fetch('/api/summaries', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date: dateString, text: aiData.summary, is_auto: isAuto })
+            });
+        }
+
+        async function generateManualSummary() {
+            const btn = document.getElementById('btn-manual-summary');
+            const typing = document.getElementById('summaries-typing');
+            
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            typing.style.display = 'block';
+
+            try {
+                const todayStr = new Date().toISOString().split('T')[0]; // "2026-06-14"
+                await generateSummaryForDate(todayStr, false);
+                await loadAndRenderSummaries();
+            } catch (e) {
+                alert("אירעה שגיאה בהפקת הסיכום.");
+                console.error(e);
+            } finally {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                typing.style.display = 'none';
+            }
+        }
+
+        // מנגנון אוטומטי שמשלים ימים חסרים כשהמשתמש נכנס למסך
+        async function autoGenerateMissingSummaries() {
+            const typing = document.getElementById('summaries-typing');
+            
+            try {
+                // מושכים את כל הדיווחים ואת כל הסיכומים
+                const todoRes = await fetch(API_URL);
+                const allTodos = await todoRes.json();
+                const summaries = await loadAndRenderSummaries();
+                
+                const existingSummaryDates = summaries.map(s => s.date);
+                const todayStr = new Date().toISOString().split('T')[0];
+
+                // מוצאים את כל התאריכים שיש בהם דיווחים (למעט היום - שאותו נשאיר למשתמש לעשות ידנית אם ירצה)
+                const datesWithEvents = [...new Set(allTodos.map(t => t.created_at.split('T')[0]))];
+                
+                const missingDates = datesWithEvents.filter(d => d !== todayStr && !existingSummaryDates.includes(d));
+
+                if (missingDates.length > 0) {
+                    typing.innerText = "ה-AI משלים סיכומים חסרים לימים קודמים...";
+                    typing.style.display = 'block';
+                    
+                    for (const date of missingDates) {
+                        await generateSummaryForDate(date, true);
+                    }
+                    
+                    await loadAndRenderSummaries();
+                }
+            } catch (e) {
+                console.error("Auto generation failed", e);
+            } finally {
+                typing.style.display = 'none';
+                typing.innerText = "ה-AI מנתח את נתוני היום ומפיק סיכום..."; // מחזיר למקור
+            }
+        }
 
     </script>
 </body>

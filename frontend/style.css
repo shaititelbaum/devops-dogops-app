@@ -175,7 +175,7 @@ input[type="text"]:focus {
     font-weight: bold;
 }
 
-.input-subgroup select, .input-subgroup input[type="date"], .input-subgroup input.location-input {
+.input-subgroup select, .input-subgroup input[type="date"], .input-subgroup input.location-input, .input-subgroup input[type="text"].dynamic-text-input {
     background: rgba(30, 41, 59, 0.7);
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: white;
@@ -614,7 +614,7 @@ li {
     color: #bae6fd;
     margin-bottom: 15px;
     /* התיקון כאן: הצרת הכפתור ומרכוז */
-    width: 60%;
+    width: 100%;
     margin: 0 auto 15px auto;
     display: block;
 }
@@ -797,4 +797,329 @@ li {
 
 #input-section, #history-section, #vaccine-section, #ai-section {
     animation: fadeIn 0.3s ease-in-out;
+}
+
+.dynamic-text-input {
+    margin-top: 8px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ==========================================
+   עיצוב אזור "הכלב שלי" (Dog Profile)
+   ========================================== */
+#mydog-section {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    height: 100%;
+    overflow-y: auto;
+}
+
+#mydog-section::-webkit-scrollbar {
+    width: 6px;
+}
+#mydog-section::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+}
+
+.profile-pic-container {
+    position: relative;
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    margin-bottom: 25px;
+    cursor: pointer;
+    border: 4px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.4);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+#dog-profile-pic {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none; /* מוסתר עד שיש תמונה */
+    z-index: 2;
+}
+
+.pic-placeholder {
+    font-size: 50px;
+    z-index: 1;
+}
+
+.profile-pic-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    /* הקטנו קצת את הפונט כדי שיכנס יפה */
+    font-size: 11px; 
+    font-weight: bold;
+    text-align: center;
+    /* התיקון הקריטי: שוליים תחתונים גדולים דוחפים את הטקסט לאזור הרחב של העיגול */
+    padding: 6px 0 16px 0; 
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    z-index: 3;
+}
+
+.profile-pic-container:hover .profile-pic-overlay {
+    transform: translateY(0);
+}
+
+.dog-details-card {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 25px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 100%;
+    max-width: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.dog-details-card input, .dog-details-card select {
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 13px;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.btn-save-profile {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); /* צבע סגול יפה לפרופיל */
+    margin-top: 10px;
+    width: 100%;
+}
+
+.btn-save-profile:hover {
+    box-shadow: 0 6px 15px rgba(139, 92, 246, 0.45);
+}
+
+/* --- מצבי עריכה וצפייה לפרופיל --- */
+.profile-actions {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.btn-edit-profile {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); /* צבע כחול לכפתור עריכה */
+    margin-top: 10px;
+    width: 100%;
+}
+
+.btn-edit-profile:hover {
+    box-shadow: 0 6px 15px rgba(59, 130, 246, 0.45);
+}
+
+/* כשהשדות נעולים, הם נראים שקופים קצת ואי אפשר ללחוץ עליהם */
+.dog-details-card input:disabled, 
+.dog-details-card select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: rgba(15, 23, 42, 0.4) !important;
+    border-color: transparent !important;
+}
+
+/* נעילת העיגול של התמונה כשאנחנו רק בצפייה */
+.profile-pic-container.disabled {
+    cursor: default;
+    border-color: transparent;
+    pointer-events: none; /* הקסם: חוסם לחלוטין את לחיצת העכבר על התמונה */
+}
+
+/* העלמת הכיתוב "עדכן תמונה" במצב צפייה */
+.profile-pic-container.disabled .profile-pic-overlay {
+    display: none;
+}
+
+/* ==========================================
+   עיצוב תפריט דיווחים מהירים
+   ========================================== */
+.quick-actions-wrapper {
+    margin-top: -4px; /* מצמיד את התפריט קצת יותר לשורת ההקלדה */
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+#quick-events-select, #ai-quick-prompts-select {
+    width: 100%;
+    padding: 10px 14px;
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e2e8f0;
+    border-radius: 12px;
+    font-size: 14px;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#quick-events-select:focus, #ai-quick-prompts-select:focus {
+    border-color: #3b82f6;
+    background: rgba(0, 0, 0, 0.4);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+/* --- עיצוב להוספה ולניהול של דיווחים מהירים --- */
+.quick-inline-ui {
+    background: rgba(30, 41, 59, 0.95);
+    border: 1px solid rgba(59, 130, 246, 0.5);
+    padding: 15px;
+    border-radius: 12px;
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+    animation: fadeIn 0.2s ease-in-out;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+.manage-ui-container {
+    flex-direction: column;
+}
+
+.quick-inline-ui input[type="text"] {
+    flex: 1;
+    padding: 10px 12px;
+    font-size: 14px;
+    margin: 0;
+}
+
+.manage-event-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: center;
+}
+
+.manage-event-row input {
+    background: rgba(0, 0, 0, 0.4) !important;
+}
+
+.manage-event-row button {
+    flex: none;
+    padding: 10px;
+    font-size: 14px;
+}
+
+.quick-type-select {
+    flex: none;
+    width: auto;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    border-radius: 8px;
+    outline: none;
+    cursor: pointer;
+}
+
+/* ביטול המרווח השלילי באזור ה-AI כדי שהתפריט לא ייחתך למעלה */
+#ai-section .quick-actions-wrapper {
+    margin-top: 2px;
+}
+
+/* ==========================================
+   עיצוב סיכומים יומיים
+   ========================================== */
+.summary-card {
+    background-color: rgba(15, 23, 42, 0.6);
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 8px;
+}
+
+.summary-date {
+    font-weight: bold;
+    color: #e2e8f0;
+    font-size: 16px;
+}
+
+.summary-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: bold;
+}
+
+.summary-badge.manual {
+    background: rgba(56, 189, 248, 0.2);
+    color: #bae6fd;
+    border: 1px solid rgba(56, 189, 248, 0.5);
+}
+
+.summary-badge.auto {
+    background: rgba(139, 92, 246, 0.2);
+    color: #c4b5fd;
+    border: 1px solid rgba(139, 92, 246, 0.5);
+}
+
+.summary-content {
+    color: #cbd5e1;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* ==========================================
+   עיצוב אחיד (זכוכית) לכפתורי מערכת ראשיים
+   (פנקס רפואי, עריכת פרופיל, והפקת סיכום)
+   ========================================== */
+.btn-toggle-form, 
+.btn-edit-profile, 
+#btn-manual-summary {
+    background: rgba(56, 189, 248, 0.15);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    color: #bae6fd;
+    width: 100%;
+    display: block;
+    box-shadow: none; 
+    font-size: 15px;
+    margin: 0 auto 15px auto;
+}
+
+/* התאמת מרווחים ספציפית למסך "הכלב שלי" */
+.btn-edit-profile {
+    margin-top: 10px;
+    margin-bottom: 0;
+}
+
+.btn-toggle-form:hover, 
+.btn-edit-profile:hover, 
+#btn-manual-summary:hover {
+    background: rgba(56, 189, 248, 0.3);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
+    transform: translateY(-2px);
 }
