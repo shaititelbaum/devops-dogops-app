@@ -11,7 +11,27 @@
     <audio id="clicker-audio" src="./assets/dog-clicker.mp3" preload="auto"></audio>
     <audio id="oops-audio" src="./assets/oops.mp3" preload="auto"></audio>
 
-    <div class="todo-container" id="main-container">
+    <div class="todo-container" id="login-container" style="max-width: 400px; justify-content: center;">
+        <h1><span class="emoji-paw">🐾</span> DogOps</h1>
+        <p class="subtitle">התחברות למערכת האילוף</p>
+
+        <div class="dog-details-card" style="margin: 0 auto; background: transparent; border: none; padding: 10px;">
+            <div class="input-subgroup full-width" style="margin-bottom: 15px;">
+                <label>אימייל:</label>
+                <input type="email" id="login-email" placeholder="name@example.com">
+            </div>
+            
+            <div class="input-subgroup full-width" style="margin-bottom: 25px;">
+                <label>סיסמה:</label>
+                <input type="password" id="login-password" placeholder="••••••••">
+            </div>
+            
+            <button class="btn-login" onclick="performLogin()" style="width: 100%; font-size: 18px; padding: 16px;">
+                הכנס אותי 🦴
+            </button>
+        </div>
+    </div>
+    <div class="todo-container" id="main-container" style="display: none;"> 
         <h1>
             <span class="emoji-paw">🐾</span>
             DogOps Dashboard
@@ -235,6 +255,9 @@
         </div>
 
     </div>
+    <button id="logout-btn" onclick="performLogout()" title="התנתק">
+        <span class="logout-icon">🚪</span>
+    </button> 
 
     <script>
         const API_URL = '/api/todos';
@@ -250,11 +273,39 @@
         // קריאה ראשונית לטעינת פרטי הכלב
        // קריאה ראשונית לטעינת נתונים עם עליית הדף
         // קריאה ראשונית לטעינת נתונים עם עליית הדף
+        // הסרנו את הטעינה האוטומטית מכאן כדי שלא ימשוך נתונים לפני התחברות
         document.addEventListener('DOMContentLoaded', () => {
-            loadDogProfile();
-            initQuickEvents(); // <--- שינינו את השם של הפונקציה כאן
-            initAiQuickPrompts();
+            // כרגע רק מכין את המסך, לא מושך מידע פרטי
         }); 
+
+        // --- פונקציית התחברות חדשה ---
+        function performLogin() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            // כאן בעתיד תהיה קריאת fetch() לשרת לאימות אמיתי
+            if(email.length > 2 && password.length > 2) {
+                // העלמת מסך ההתחברות והצגת הדאשבורד הראשי
+                document.getElementById('login-container').style.display = 'none';
+                document.getElementById('main-container').style.display = 'flex';
+                // הוספנו את השורה הזו: מציג את כפתור ההתנתקות
+                document.getElementById('logout-btn').style.display = 'block';
+                trackPawPosition();
+                // עכשיו שהתחברנו - נטען את כל הנתונים של הכלב
+                loadDogProfile();
+                initQuickEvents(); 
+                initAiQuickPrompts();
+                fetchTodos(); // טעינת ההיסטוריה ההתחלתית
+            } else {
+                alert("אנא הזן אימייל וסיסמה חוקיים");
+            }
+        }
+        
+        // הוספנו את הפונקציה הזו:
+        function performLogout() {
+            // הדרך הכי פשוטה ונקייה לאפס אפליקציית דף-יחיד (SPA) היא לרענן את העמוד
+            window.location.reload();
+        }
 
         function switchView(viewName) {
             currentView = viewName;
@@ -1237,6 +1288,56 @@ async function addDogEvent(type) {
                 typing.innerText = "ה-AI מנתח את נתוני היום ומפיק סיכום..."; // מחזיר למקור
             }
         }
+
+        // ==========================================
+        // מערכת עקיבה חכמה לכפתור ההתנתקות
+        // ==========================================
+        function trackPawPosition() {
+            const btn = document.getElementById('logout-btn');
+            // אם אנחנו לפני התחברות והכפתור מוסתר, אין טעם לחשב
+            if (!btn || btn.style.display === 'none') return;
+
+            // 1. מידות התמונה המקורית שלך (נניח סטנדרט 1920x1080)
+            const imgWidth = 1920; 
+            const imgHeight = 1080;
+            const imgRatio = imgWidth / imgHeight;
+
+            // 2. מיקום כף הרגל באחוזים מתוך התמונה המקורית
+            // כיוונתי את זה בערך למספרים שהגעת אליהם (10% משמאל, 73% מלמעלה)
+            const pawXPercent = 0.1720; 
+            const pawYPercent = 0.6800; 
+
+            // 3. מידות המסך הנוכחיות
+            const winWidth = window.innerWidth;
+            const winHeight = window.innerHeight;
+            const winRatio = winWidth / winHeight;
+
+            let scale, xOffset, yOffset;
+
+            // 4. חישוב ההתנהגות של background-size: cover
+            if (winRatio > imgRatio) {
+                // המסך רחב יותר מהתמונה (התמונה נחתכת למעלה ולמטה)
+                scale = winWidth / imgWidth;
+                xOffset = 0;
+                yOffset = (winHeight - (imgHeight * scale)) / 2;
+            } else {
+                // המסך צר יותר מהתמונה (התמונה נחתכת בצדדים)
+                scale = winHeight / imgHeight;
+                xOffset = (winWidth - (imgWidth * scale)) / 2;
+                yOffset = 0;
+            }
+
+            // 5. חישוב הפיקסלים המדויקים על המסך
+            const finalX = xOffset + (imgWidth * scale * pawXPercent);
+            const finalY = yOffset + (imgHeight * scale * pawYPercent);
+
+            // 6. הצבת הכפתור במקום החדש
+            btn.style.left = `${finalX}px`;
+            btn.style.top = `${finalY}px`;
+        }
+
+        // הפעלת העקיבה בכל פעם שהמשתמש משנה את גודל המסך
+        window.addEventListener('resize', trackPawPosition);
 
     </script>
 </body>

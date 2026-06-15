@@ -122,7 +122,7 @@ h1 {
     margin-bottom: 12px;
 }
 
-input[type="text"] {
+input[type="text"], input[type="password"], input[type="email"] {
     flex: 1;
     padding: 14px;
     border: 1px solid rgba(255, 255, 255, 0.4);
@@ -135,11 +135,11 @@ input[type="text"] {
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
-input[type="text"]::placeholder {
+input[type="text"]::placeholder, input[type="password"]::placeholder, input[type="email"]::placeholder {
     color: #cbd5e1;
 }
 
-input[type="text"]:focus {
+input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focus {
     background: rgba(0, 0, 0, 0.4);
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4);
@@ -1098,7 +1098,8 @@ li {
    ========================================== */
 .btn-toggle-form, 
 .btn-edit-profile, 
-#btn-manual-summary {
+#btn-manual-summary,
+.btn-login {
     background: rgba(56, 189, 248, 0.15);
     border: 1px solid rgba(56, 189, 248, 0.4);
     color: #bae6fd;
@@ -1107,6 +1108,7 @@ li {
     box-shadow: none; 
     font-size: 15px;
     margin: 0 auto 15px auto;
+    transition: all 0.2s;
 }
 
 /* התאמת מרווחים ספציפית למסך "הכלב שלי" */
@@ -1117,9 +1119,53 @@ li {
 
 .btn-toggle-form:hover, 
 .btn-edit-profile:hover, 
-#btn-manual-summary:hover {
+#btn-manual-summary:hover,
+.btn-login:hover {
     background: rgba(56, 189, 248, 0.3);
     color: #ffffff;
     box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
     transform: translateY(-2px);
+}
+
+/* ==========================================
+   כפתור התנתקות (עיגול שקוף על כף הרגל ברקע)
+   ========================================== */
+#logout-btn {
+    position: fixed;
+    /* הופך את הכפתור לעיגול בגודל של כף הרגל */
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    
+    background: transparent; /* שקוף לגמרי כברירת מחדל */
+    border: none;
+    cursor: pointer;
+    z-index: 1000;
+    transition: all 0.3s ease;
+    display: none; /* מוסתר עד שמתחברים */
+}
+
+/* האפקט הזוהר כשעוברים עם העכבר על כף הרגל */
+#logout-btn:hover {
+    background: rgba(56, 189, 248, 0.15); /* צבע תכלת עדין */
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.9), inset 0 0 10px rgba(56, 189, 248, 0.5); /* הילה חיצונית ופנימית */
+    transform: scale(1.1); /* מגדיל טיפה את כף הרגל */
+}
+
+/* עיצוב אימוג'י הדלת */
+#logout-btn .logout-icon {
+    position: absolute;
+    right: -35px; /* דוחף את הדלת ימינה מחוץ לעיגול של כף הרגל */
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 24px;
+    opacity: 0; /* מוסתר כדי לא להרוס את תמונת הרקע */
+    transition: all 0.3s ease;
+    pointer-events: none; /* מוודא שהלחיצה תהיה רק על העיגול עצמו */
+}
+
+/* חשיפת הדלת רק כשהעכבר על כף הרגל */
+#logout-btn:hover .logout-icon {
+    opacity: 1;
+    transform: translateY(-50%) translateX(5px); /* אנימציה קטנה של קפיצה ימינה */
 }
