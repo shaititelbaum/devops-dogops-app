@@ -101,6 +101,11 @@
                     <label>גזע:</label>
                     <input type="text" id="dog-breed" placeholder="למשל: גולדן רטריבר">
                 </div>
+
+                <div class="input-subgroup">
+                   <label>עיר מגורים:</label>
+                   <input type="text" id="dog-city" disabled placeholder="הכנס עיר מגורים">
+                </div>
                 
                 <div class="input-subgroup full-width">
                     <label>גיל נוכחי:</label>
@@ -703,7 +708,7 @@ async function addDogEvent(type) {
         // פונקציית הקסם: שולטת האם אפשר לערוך או לא
         function setProfileState(isEditing) {
             // רשימת כל השדות (מעודכן עם השדות החדשים)
-            const inputs = ['dog-name', 'dog-breed', 'dog-dob', 'dog-gender', 'dog-status', 'dog-weight', 'dog-chip', 'dog-allergies'];
+            const inputs = ['dog-name', 'dog-breed', 'dog-city', 'dog-dob', 'dog-gender', 'dog-status', 'dog-weight', 'dog-chip', 'dog-allergies'];
             inputs.forEach(id => {
                 document.getElementById(id).disabled = !isEditing;
             });
@@ -733,6 +738,7 @@ async function addDogEvent(type) {
             const profileData = {
                 name: document.getElementById('dog-name').value,
                 breed: document.getElementById('dog-breed').value,
+                city: document.getElementById('dog-city').value,
                 dob: document.getElementById('dog-dob').value,
                 gender: document.getElementById('dog-gender').value,
                 status: document.getElementById('dog-status').value,
@@ -754,6 +760,7 @@ async function addDogEvent(type) {
                 const profile = JSON.parse(savedData);
                 document.getElementById('dog-name').value = profile.name || '';
                 document.getElementById('dog-breed').value = profile.breed || '';
+                document.getElementById('dog-city').value = profile.city || '';
                 document.getElementById('dog-dob').value = profile.dob || '';
                 calculateDogAge();
                 document.getElementById('dog-gender').value = profile.gender || 'זכר';
