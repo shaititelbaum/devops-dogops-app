@@ -1104,7 +1104,7 @@ li {
     color: #bae6fd;
     width: 100%;
     display: block;
-    box-shadow: none; /* ביטול ההצללה הכבדה של כפתורים רגילים */
+    box-shadow: none; 
     font-size: 15px;
     margin: 0 auto 15px auto;
 }
