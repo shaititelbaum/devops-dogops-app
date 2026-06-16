@@ -29,16 +29,39 @@
             <button class="btn-login" onclick="performLogin()" style="width: 100%; font-size: 18px; padding: 16px;">
                 הכנס אותי 🦴
             </button>
+            <button class="btn-register" onclick="toggleForms()">אין לך חשבון? הירשם עכשיו</button>
         </div>
     </div>
-    <div class="todo-container" id="main-container" style="display: none;"> 
+
+    <div class="todo-container" id="register-container" style="display: none; max-width: 400px; justify-content: center;">
+        <h1><span class="emoji-paw">🐾</span> הרשמה</h1>
+        <p class="subtitle">הצטרף לקהילת DogOps</p>
         
+        <div class="dog-details-card" style="margin: 0 auto; background: transparent; border: none; padding: 10px;">
+            <div class="input-subgroup full-width" style="margin-bottom: 15px;">
+                <label>אימייל:</label>
+                <input type="email" id="reg-email" placeholder="name@example.com">
+            </div>
+            <div class="input-subgroup full-width" style="margin-bottom: 15px;">
+                <label>סיסמה:</label>
+                <input type="password" id="reg-password" placeholder="••••••••">
+            </div>
+            <div class="input-subgroup full-width" style="margin-bottom: 25px;">
+                <label>אימות סיסמה:</label>
+                <input type="password" id="reg-password-confirm" placeholder="••••••••">
+            </div>
+            
+            <button class="btn-login" onclick="performRegister()" style="width: 100%; font-size: 18px; padding: 16px;">צור חשבון</button> 
+            <button class="btn-register" onclick="toggleForms()">כבר רשום? התחבר כאן</button>
+        </div> 
+
+    </div><div class="todo-container" id="main-container" style="display: none;"> 
         <button class="btn-header-logout" onclick="performLogout()" title="התנתק">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
                 <line x1="12" y1="2" x2="12" y2="12"></line>
             </svg>
-        </button>
+        </button> 
 
         <h1>
             <span class="emoji-paw">🐾</span>
@@ -307,6 +330,42 @@
             } else {
                 alert("אנא הזן אימייל וסיסמה חוקיים");
             }
+        }
+
+        function performRegister() {
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+            const confirmPassword = document.getElementById('reg-password-confirm').value;
+
+            // 1. בדיקת אימייל פשוטה
+            if (!email.includes('@') || email.length < 5) {
+                alert("נא להזין אימייל תקין.");
+                return;
+            }
+
+            // 2. דרישות סיסמה: לפחות 6 תווים, חייב להכיל אותיות ומספרים
+            const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/;
+            
+            if (!passwordRegex.test(password)) {
+                alert("הסיסמה חייבת להכיל לפחות 6 תווים, כולל אותיות ומספרים.");
+                return;
+            }
+
+            // 3. בדיקת התאמת סיסמאות
+            if (password !== confirmPassword) {
+                alert("הסיסמאות לא תואמות! נא לוודא שהסיסמה ואימות הסיסמה זהים.");
+                return;
+            }
+
+            // אם עברנו את כל הבדיקות:
+            console.log("הרשמה תקינה עבור:", email);
+            alert("ההרשמה הצליחה! (כעת נוכל לחבר זאת לשרת).");
+            
+            // ניקוי הטופס וחזרה למסך התחברות
+            document.getElementById('reg-email').value = '';
+            document.getElementById('reg-password').value = '';
+            document.getElementById('reg-password-confirm').value = '';
+            toggleForms();
         }
         
         // הוספנו את הפונקציה הזו:
@@ -1342,6 +1401,24 @@ async function addDogEvent(type) {
             // 6. הצבת הכפתור במקום החדש
             btn.style.left = `${finalX}px`;
             btn.style.top = `${finalY}px`;
+        }
+
+        function showRegisterForm() {
+            alert("בקרוב: דף ההרשמה יפתח כאן! 🛠️");
+        }
+
+        function toggleForms() {
+            const loginDiv = document.getElementById('login-container');
+            const regDiv = document.getElementById('register-container');
+            
+            // בודק מה מוסתר ומה גלוי ומחליף ביניהם
+            if (loginDiv.style.display === 'none') {
+                loginDiv.style.display = 'block';
+                regDiv.style.display = 'none';
+            } else {
+                loginDiv.style.display = 'none';
+                regDiv.style.display = 'block';
+            }
         }
 
         // הפעלת העקיבה בכל פעם שהמשתמש משנה את גודל המסך

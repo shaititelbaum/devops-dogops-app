@@ -1205,3 +1205,31 @@ li {
     transform: scale(1.1);
     box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
+
+.btn-register {
+    /* עיצוב זכוכית עדין */
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #cbd5e1 !important;
+    
+    /* ביטול ברירות המחדל של הכפתורים הגדולים */
+    box-shadow: none !important;
+    padding: 12px !important;
+    margin-top: 10px !important;
+    width: 100%;
+    font-size: 14px !important;
+    font-weight: normal !important;
+    
+    /* סידור העיצוב */
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.btn-register:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: white !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    transform: translateY(-2px);
+}
