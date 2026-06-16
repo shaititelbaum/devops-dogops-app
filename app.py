@@ -3,48 +3,56 @@ import google.generativeai as genai
 from flask import Flask, jsonify, request
 from datetime import datetime
 
+# ייבוא ספריות ה-DB והאבטחה
+from flask_sqlalchemy import SQLAlchemy
+from flask_jwt_extended import JWTManager
+
 app = Flask(__name__)
 
-# --- נתוני דמו לאילוף ---
-todos = [
-    {
-        "id": 1, 
-        "title": "🟢 הכלב הגיב מצוין לפקודת 'אלי'", 
-        "created_at": "2026-06-10T14:02:00",
-        "priority": None,
-        "due_date": None,
-        "location": "גינת הכלבים",
-        "gps_link": None
-    },
-    {
-        "id": 2, 
-        "title": "🔴 אופס... משך חזק ברצועה בגלל חתול", 
-        "created_at": "2026-06-10T14:05:00",
-        "priority": "חשוב",
-        "due_date": "2026-06-15",
-        "location": "רחוב הרצל",
-        "gps_link": "https://www.google.com/maps?q=31.8903,34.8113"
-    }
-]
+# הגדרות בסיס נתונים (ייקראו אוטומטית מהסביבה בקוברנטיס)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/dogops')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'super-secret-key-change-in-prod')
 
-# --- נתוני דמו לחיסונים ---
-vaccines = [
-    {
-        "id": 1,
-        "type": "משושה",
-        "given_date": "2025-05-10",
-        "expiry_date": "2026-05-10"
-    }
-]
+# אתחול הכלים
+db = SQLAlchemy(app)
+jwt = JWTManager(app)
 
-# --- נתוני דמו לסיכומים יומיים ---
-summaries = []
+# ==========================================
+# Database Models (טבלאות בסיס הנתונים)
+# ==========================================
+class Todo(db.Model):
+    __tablename__ = 'todos'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    created_at = db.Column(db.String(50), default=lambda: datetime.now().isoformat())
+    priority = db.Column(db.String(50), nullable=True)
+    due_date = db.Column(db.String(50), nullable=True)
+    location = db.Column(db.String(200), nullable=True)
+    gps_link = db.Column(db.String(500), nullable=True)
+
+class Vaccine(db.Model):
+    __tablename__ = 'vaccines'
+    id = db.Column(db.Integer, primary_key=True)
+    type = db.Column(db.String(100), nullable=False)
+    given_date = db.Column(db.String(50), nullable=False)
+    expiry_date = db.Column(db.String(50), nullable=False)
+
+class Summary(db.Model):
+    __tablename__ = 'summaries'
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.String(50), nullable=False, unique=True)
+    text = db.Column(db.Text, nullable=False)
+    is_auto = db.Column(db.Boolean, default=False)
+
+# פקודה שמייצרת את הטבלאות ב-Postgres אוטומטית בעליית האפליקציה
+with app.app_context():
+    db.create_all()
 
 # --- הגדרת Gemini AI ---
 api_key = os.getenv("GOOGLE_API_KEY")
 if api_key:
     genai.configure(api_key=api_key)
-    # תיקון 1: שינוי שם המודל למודל הנתמך והיציב
     model = genai.GenerativeModel('gemini-pro')
 
 @app.route('/')
@@ -67,13 +75,10 @@ def chat_with_ai():
     user_message = data.get('message', '')
     
     try:
-        # קוד חכם: מבקש מגוגל את רשימת המודלים שזמינים למפתח הספציפי שלך
         valid_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        
         if not valid_models:
             return jsonify({"error": "המפתח תקין, אך לא נמצאו מודלי טקסט שפתוחים עבורו."}), 500
             
-        # בוחר אוטומטית את המודל הראשון והתקין ברשימה
         chosen_model = valid_models[0]
         model = genai.GenerativeModel(chosen_model)
         
@@ -81,59 +86,86 @@ def chat_with_ai():
         response = model.generate_content(prompt)
         
         return jsonify({"response": response.text}), 200
-        
     except Exception as e:
         return jsonify({"error": f"שגיאת תקשורת עם גוגל: {str(e)}"}), 500
-        
+
 # ==========================================
-# Routes: Todos
+# Routes: Todos (עבודה מול DB)
 # ==========================================
 @app.route('/api/todos', methods=['GET'])
 def get_todos():
-    return jsonify(todos), 200
+    all_todos = Todo.query.all()
+    result = []
+    for t in all_todos:
+        result.append({
+            "id": t.id,
+            "title": t.title,
+            "created_at": t.created_at,
+            "priority": t.priority,
+            "due_date": t.due_date,
+            "location": t.location,
+            "gps_link": t.gps_link
+        })
+    return jsonify(result), 200
 
 @app.route('/api/todos', methods=['POST'])
 def create_todo():
-    current_time = datetime.now().isoformat()
     data = request.json
-    new_todo = {
-        "id": len(todos) + 1,
-        "title": data['title'],
-        "created_at": current_time,
-        "priority": data.get('priority'),
-        "due_date": data.get('due_date'),
-        "location": data.get('location'),
-        "gps_link": data.get('gps_link')
-    }
-    todos.append(new_todo)
-    return jsonify(new_todo), 201
+    new_todo = Todo(
+        title=data['title'],
+        priority=data.get('priority'),
+        due_date=data.get('due_date'),
+        location=data.get('location'),
+        gps_link=data.get('gps_link')
+    )
+    db.session.add(new_todo)
+    db.session.commit()
+    
+    return jsonify({
+        "id": new_todo.id,
+        "title": new_todo.title,
+        "created_at": new_todo.created_at
+    }), 201
 
 @app.route('/api/todos/<int:todo_id>', methods=['PUT'])
 def update_todo(todo_id):
-    global todos
+    todo = Todo.query.get(todo_id)
+    if not todo:
+        return jsonify({"error": "Event not found"}), 404
+        
     data = request.json
-    for todo in todos:
-        if todo['id'] == todo_id:
-            todo['title'] = data.get('title', todo['title'])
-            todo['priority'] = data.get('priority', todo['priority'])
-            todo['due_date'] = data.get('due_date', todo['due_date'])
-            todo['location'] = data.get('location', todo['location'])
-            return jsonify(todo), 200
-    return jsonify({"error": "Event not found"}), 404
+    todo.title = data.get('title', todo.title)
+    todo.priority = data.get('priority', todo.priority)
+    todo.due_date = data.get('due_date', todo.due_date)
+    todo.location = data.get('location', todo.location)
+    
+    db.session.commit()
+    return jsonify({"message": "Updated successfully"}), 200
 
-# תיקון 2: הוספת סוגריים מרובעים סביב 'DELETE'
 @app.route('/api/todos/<int:todo_id>', methods=['DELETE'])
 def delete_todo(todo_id):
-    global todos
-    todos = [t for t in todos if t['id'] != todo_id]
+    todo = Todo.query.get(todo_id)
+    if not todo:
+        return jsonify({"error": "Not found"}), 404
+    db.session.delete(todo)
+    db.session.commit()
     return jsonify({"result": True}), 200
 
 # ==========================================
-# Routes: Vaccines
+# Routes: Vaccines (עבודה מול DB)
 # ==========================================
 @app.route('/api/vaccines', methods=['GET'])
 def get_vaccines():
-    return jsonify(vaccines), 200
+    all_vaccines = Vaccine.query.all()
+    result = []
+    for v in all_vaccines:
+        result.append({
+            "id": v.id,
+            "type": v.type,
+            "given_date": v.given_date,
+            "expiry_date": v.expiry_date
+        })
+    return jsonify(result), 200
 
 @app.route('/api/vaccines', methods=['POST'])
 def create_vaccine():
@@ -143,43 +175,57 @@ def create_vaccine():
         given_date_obj = datetime.strptime(data['given_date'], '%Y-%m-%d')
         expiry_date = (given_date_obj.replace(year=given_date_obj.year + 1)).strftime('%Y-%m-%d')
 
-    new_vaccine = {
-        "id": len(vaccines) + 1,
-        "type": data['type'],
-        "given_date": data['given_date'],
-        "expiry_date": expiry_date
-    }
-    vaccines.append(new_vaccine)
-    return jsonify(new_vaccine), 201
+    new_vaccine = Vaccine(
+        type=data['type'],
+        given_date=data['given_date'],
+        expiry_date=expiry_date
+    )
+    db.session.add(new_vaccine)
+    db.session.commit()
+    return jsonify({"id": new_vaccine.id, "type": new_vaccine.type}), 201
 
 @app.route('/api/vaccines/<int:vaccine_id>', methods=['DELETE'])
 def delete_vaccine(vaccine_id):
-    global vaccines
-    vaccines = [v for v in vaccines if v['id'] != vaccine_id]
+    vaccine = Vaccine.query.get(vaccine_id)
+    if not vaccine:
+        return jsonify({"error": "Not found"}), 404
+    db.session.delete(vaccine)
+    db.session.commit()
     return jsonify({"result": True}), 200
 
 # ==========================================
-# Routes: Daily Summaries
+# Routes: Daily Summaries (עבודה מול DB)
 # ==========================================
 @app.route('/api/summaries', methods=['GET'])
 def get_summaries():
-    return jsonify(summaries), 200
+    all_summaries = Summary.query.all()
+    result = []
+    for s in all_summaries:
+        result.append({
+            "id": s.id,
+            "date": s.date,
+            "text": s.text,
+            "is_auto": s.is_auto
+        })
+    return jsonify(result), 200
 
 @app.route('/api/summaries', methods=['POST'])
 def create_summary():
-    global summaries
-    
     data = request.json
-    new_summary = {
-        "id": len(summaries) + 1,
-        "date": data['date'],
-        "text": data['text'],
-        "is_auto": data.get('is_auto', False)
-    }
-
-    summaries = [s for s in summaries if s['date'] != data['date']]
-    summaries.append(new_summary)
-    return jsonify(new_summary), 201
+    
+    # מחיקת סיכום קודם אם קיים לאותו תאריך (כדי למנוע כפילויות)
+    existing = Summary.query.filter_by(date=data['date']).first()
+    if existing:
+        db.session.delete(existing)
+        
+    new_summary = Summary(
+        date=data['date'],
+        text=data['text'],
+        is_auto=data.get('is_auto', False)
+    )
+    db.session.add(new_summary)
+    db.session.commit()
+    return jsonify({"id": new_summary.id, "date": new_summary.date}), 201
 
 @app.route('/api/summaries/generate', methods=['POST'])
 def generate_summary():
