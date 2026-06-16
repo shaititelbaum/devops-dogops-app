@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "devops-todo-backend-chart.fullname" . }}
+  name: {{ include "devops-dogops-backend-chart.fullname" . }}
   labels:
-    {{- include "devops-todo-backend-chart.labels" . | nindent 4 }}
+    {{- include "devops-dogops-backend-chart.labels" . | nindent 4 }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
   selector:
     matchLabels:
-      {{- include "devops-todo-backend-chart.selectorLabels" . | nindent 6 }}
+      {{- include "devops-dogops-backend-chart.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -18,7 +18,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "devops-todo-backend-chart.labels" . | nindent 8 }}
+        {{- include "devops-dogops-backend-chart.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -27,7 +27,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "devops-todo-backend-chart.serviceAccountName" . }}
+      serviceAccountName: {{ include "devops-dogops-backend-chart.serviceAccountName" . }}
       {{- with .Values.podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
@@ -44,6 +44,13 @@ spec:
             - name: http
               containerPort: {{ .Values.service.port }}
               protocol: TCP
+          
+          # --- הצינור שמחבר בין ה-Values לקוד הפייתון ---
+          env:
+            - name: DATABASE_URL
+              value: {{ .Values.databaseUrl | quote }}
+          # --------------------------------------------------
+
           {{- with .Values.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
