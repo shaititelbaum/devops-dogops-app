@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: 480891637713.dkr.ecr.us-east-1.amazonaws.com/devops-todo-frontend
+  repository: 480891637713.dkr.ecr.us-east-1.amazonaws.com/devops-dogops-frontend
   pullPolicy: IfNotPresent
   tag: "latest"
 
@@ -9,7 +9,7 @@ imagePullSecrets:
   - name: ecr-registry-secret
 
 nameOverride: ""
-fullnameOverride: "devops-todo-frontend"
+fullnameOverride: "devops-dogops-frontend"
 
 service:
   type: ClusterIP
