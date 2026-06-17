@@ -2,14 +2,14 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ include "devops-todo-backend-chart.fullname" . }}
+  name: {{ include "devops-dogops-backend-chart.fullname" . }}
   labels:
-    {{- include "devops-todo-backend-chart.labels" . | nindent 4 }}
+    {{- include "devops-dogops-backend-chart.labels" . | nindent 4 }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ include "devops-todo-backend-chart.fullname" . }}
+    name: {{ include "devops-dogops-backend-chart.fullname" . }}
   minReplicas: {{ .Values.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.autoscaling.maxReplicas }}
   metrics:

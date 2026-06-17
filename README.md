@@ -24,7 +24,7 @@ The Helm chart has been successfully validated and deployed locally inside a Kub
 2. **Deploy the Application via Helm**
    To avoid using the latest tag (which is bad practice in Production) and maintain immutability, we dynamically inject the specific Git Commit SHA tag during deployment using the --set flag:
    ```bash
-     helm install devops-todo-backend ./devops-todo-backend-chart --set image.tag="6f68088d2e50695cf267217aedeb872d5fecbee4"
+     helm install devops-dogops-backend ./devops-dogops-backend-chart --set image.tag="6f68088d2e50695cf267217aedeb872d5fecbee4"
 
 3. **Verify Deployment Status**
    Check that the Pod has successfully pulled the image and transitioned into a Running state:
