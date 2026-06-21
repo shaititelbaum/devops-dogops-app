@@ -30,7 +30,7 @@ spec:
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: test-db-credentials 
+                  name: test-db-credentials  # השם הנכון של הסוד
                   key: password
           volumeMounts:
             - name: postgres-data
