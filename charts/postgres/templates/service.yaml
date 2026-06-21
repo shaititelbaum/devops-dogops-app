@@ -7,9 +7,9 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.service.port }}
-      targetPort: http
+    - port: 5432
+      targetPort: postgres  # זה חייב להתאים לשם ה-containerPort ב-deployment
       protocol: TCP
-      name: http
+      name: postgres
   selector:
     {{- include "postgres.selectorLabels" . | nindent 4 }}
