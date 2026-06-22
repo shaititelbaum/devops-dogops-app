@@ -24,13 +24,15 @@ spec:
               protocol: TCP
           env:
             - name: POSTGRES_USER
-              value: {{ .Values.env.POSTGRES_USER | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.auth.existingSecret }}
+                  key: username
             - name: POSTGRES_DB
               value: {{ .Values.env.POSTGRES_DB | quote }}
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  # 👇 קריאה דינמית של שם הסוד מה-Values!
                   name: {{ .Values.auth.existingSecret }}
                   key: password 
           volumeMounts:

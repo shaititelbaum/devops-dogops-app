@@ -45,11 +45,26 @@ spec:
               containerPort: {{ .Values.service.port }}
               protocol: TCP
           
-          # --- הצינור שמחבר בין ה-Values לקוד הפייתון ---
+          # --- הרכבה דינמית ומאובטחת של ה-DATABASE_URL מתוך AWS Secrets Manager וקוברנטיס ---
           env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ printf "%s-db-credentials" .Release.Namespace }}
+                  key: username
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ printf "%s-db-credentials" .Release.Namespace }}
+                  key: password
+            - name: DB_HOST
+              value: {{ printf "dogops-postgres-%s" .Release.Namespace }}
+            - name: DB_NAME
+              value: "dogopsdb"
             - name: DATABASE_URL
-              value: {{ .Values.databaseUrl | quote }}
-          # --------------------------------------------------
+              value: $(DB_USER):$(DB_PASS)@$(DB_HOST):5432/$(DB_NAME)"
+              # הסבר: קוברנטיס יודע לשרשר משתני סביבה שהוגדרו לפניו באמצעות סינטקס של $(VAR)
+          # ----------------------------------------------------------------------------------
 
           {{- with .Values.livenessProbe }}
           livenessProbe:
