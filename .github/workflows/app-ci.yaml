@@ -14,6 +14,7 @@ on:
 jobs:
   # Backend build and deploy pipeline
   build-and-test:
+    name: Backend Verify
     runs-on: ubuntu-latest
 
     steps:
@@ -92,7 +93,7 @@ jobs:
 
   # Frontend build and deploy pipeline
   build-and-push-frontend:
-    name: Frontend CI (Build & Push)
+    name: Frontend Verify
     runs-on: ubuntu-latest
 
     steps:
