@@ -21,6 +21,9 @@ persistence:
   enabled: true
   size: "2Gi"
 
+auth:
+  existingSecret: "test-db-credentials"
+
 serviceAccount:
   create: true
   annotations: {}
