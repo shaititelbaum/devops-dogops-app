@@ -60,7 +60,7 @@ spec:
             - name: DB_HOST
               value: {{ printf "dogops-postgres-%s" .Release.Namespace }}
             - name: DB_NAME
-              value: "dogopsdb"
+              value: "dogops"
             - name: DATABASE_URL
               # 👇 התיקון הארכיטקטוני המדויק: הוספת הפרוטוקול ועטיפה תקינה בגרשיים
               value: "postgresql://$(DB_USER):$(DB_PASS)@$(DB_HOST):5432/$(DB_NAME)"
