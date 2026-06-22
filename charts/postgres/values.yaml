@@ -38,3 +38,6 @@ httpRoute:
   parentRefs: []
   hostnames: []
   rules: []
+
+ingress:
+  enabled: false

@@ -35,9 +35,19 @@ resources:
     cpu: 100m
     memory: 128Mi
 
+# --- יישור קו של בלוק ה-Autoscaling כדי למנוע נתקים בדיפלוימנט ---
 autoscaling:
   enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
 
-nodeSelector: {}
-tolerations: []
-affinity: {}
+# --- הבלוקים החדשים שסוגרים את הנתקים ב-Templates ---
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+  automount: true
+
+httpRoute:
+  enabled: false
