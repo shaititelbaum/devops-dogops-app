@@ -6,7 +6,7 @@ image:
   pullPolicy: IfNotPresent
 
 env:
-  POSTGRES_DB: "dogopsdb"
+  POSTGRES_DB: "dogops"
   POSTGRES_USER: "ShaiAdmin"
 
 resources:
