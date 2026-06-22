@@ -25,3 +25,16 @@ serviceAccount:
   create: true
   annotations: {}
   automount: true
+
+# --- הבלוקים החדשים שסוגרים את כל הנתקים ב-Chart ---
+
+service:
+  type: ClusterIP
+  port: 5432
+
+httpRoute:
+  enabled: false
+  annotations: {}
+  parentRefs: []
+  hostnames: []
+  rules: []
