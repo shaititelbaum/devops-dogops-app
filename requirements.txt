@@ -3,3 +3,4 @@ google-generativeai
 flask-sqlalchemy
 flask-jwt-extended
 psycopg2-binary
+boto3
