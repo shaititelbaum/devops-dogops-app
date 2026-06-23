@@ -306,73 +306,95 @@
         // קריאה ראשונית לטעינת נתונים עם עליית הדף
         // הסרנו את הטעינה האוטומטית מכאן כדי שלא ימשוך נתונים לפני התחברות
         document.addEventListener('DOMContentLoaded', () => {
-            // כרגע רק מכין את המסך, לא מושך מידע פרטי
-        }); 
-
-        // --- פונקציית התחברות חדשה ---
-        function performLogin() {
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-
-            // כאן בעתיד תהיה קריאת fetch() לשרת לאימות אמיתי
-            if(email.length > 2 && password.length > 2) {
-                // העלמת מסך ההתחברות והצגת הדאשבורד הראשי
+            // בודק אם המשתמש כבר מחובר (יש טוקן)
+            if (localStorage.getItem('dogOpsToken')) {
                 document.getElementById('login-container').style.display = 'none';
                 document.getElementById('main-container').style.display = 'flex';
-                // הוספנו את השורה הזו: מציג את כפתור ההתנתקות
                 document.getElementById('logout-btn').style.display = 'block';
                 trackPawPosition();
-                // עכשיו שהתחברנו - נטען את כל הנתונים של הכלב
                 loadDogProfile();
                 initQuickEvents(); 
                 initAiQuickPrompts();
-                fetchTodos(); // טעינת ההיסטוריה ההתחלתית
-            } else {
+                fetchTodos();
+            }
+        }); 
+
+       // --- פונקציות התחברות אמיתיות מול השרת ---
+        async function performLogin() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            if(email.length < 3 || password.length < 3) {
                 alert("אנא הזן אימייל וסיסמה חוקיים");
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    localStorage.setItem('dogOpsToken', data.access_token);
+                    document.getElementById('login-container').style.display = 'none';
+                    document.getElementById('main-container').style.display = 'flex';
+                    document.getElementById('logout-btn').style.display = 'block';
+                    trackPawPosition();
+                    loadDogProfile();
+                    initQuickEvents(); 
+                    initAiQuickPrompts();
+                    fetchTodos();
+                } else {
+                    alert("שגיאה בהתחברות: " + (data.error || "נסה שוב"));
+                }
+            } catch (e) {
+                alert("שגיאת תקשורת מול השרת");
             }
         }
 
-        function performRegister() {
+        async function performRegister() {
             const email = document.getElementById('reg-email').value;
             const password = document.getElementById('reg-password').value;
             const confirmPassword = document.getElementById('reg-password-confirm').value;
 
-            // 1. בדיקת אימייל פשוטה
-            if (!email.includes('@') || email.length < 5) {
-                alert("נא להזין אימייל תקין.");
-                return;
-            }
+            if (!email.includes('@') || email.length < 5) return alert("נא להזין אימייל תקין.");
+            if (password.length < 6) return alert("הסיסמה חייבת להכיל לפחות 6 תווים.");
+            if (password !== confirmPassword) return alert("הסיסמאות לא תואמות!");
 
-            // 2. דרישות סיסמה: לפחות 6 תווים, חייב להכיל אותיות ומספרים
-            const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/;
-            
-            if (!passwordRegex.test(password)) {
-                alert("הסיסמה חייבת להכיל לפחות 6 תווים, כולל אותיות ומספרים.");
-                return;
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    alert("ההרשמה הצליחה! עכשיו אפשר להתחבר.");
+                    toggleForms();
+                } else {
+                    alert("שגיאה בהרשמה: " + data.error);
+                }
+            } catch (e) {
+                alert("שגיאת תקשורת מול השרת");
             }
-
-            // 3. בדיקת התאמת סיסמאות
-            if (password !== confirmPassword) {
-                alert("הסיסמאות לא תואמות! נא לוודא שהסיסמה ואימות הסיסמה זהים.");
-                return;
-            }
-
-            // אם עברנו את כל הבדיקות:
-            console.log("הרשמה תקינה עבור:", email);
-            alert("ההרשמה הצליחה! (כעת נוכל לחבר זאת לשרת).");
-            
-            // ניקוי הטופס וחזרה למסך התחברות
-            document.getElementById('reg-email').value = '';
-            document.getElementById('reg-password').value = '';
-            document.getElementById('reg-password-confirm').value = '';
-            toggleForms();
         }
-        
-        // הוספנו את הפונקציה הזו:
+
         function performLogout() {
-            // הדרך הכי פשוטה ונקייה לאפס אפליקציית דף-יחיד (SPA) היא לרענן את העמוד
+            localStorage.removeItem('dogOpsToken');
             window.location.reload();
         }
+
+        // פונקציית עזר קריטית - מושכת את הטוקן לכל הבקשות הבאות
+        function getAuthHeaders() {
+            const token = localStorage.getItem('dogOpsToken');
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
+        } 
 
         function switchView(viewName) {
             currentView = viewName;
@@ -457,10 +479,9 @@
             typingIndicator.style.display = 'block';
             
             try {
-                // קריאה אמיתית לשרת הפייתון שלנו
                 const response = await fetch('/api/chat', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify({ message: text })
                 });
                 
@@ -498,7 +519,7 @@
         // משיכת רשימת החיסונים מהשרת
         async function fetchVaccines() {
             try {
-                const response = await fetch(VACCINES_API_URL);
+                const response = await fetch(VACCINES_API_URL, { headers: getAuthHeaders() });
                 if (!response.ok) throw new Error('API failed');
                 const vaccines = await response.json();
                 renderVaccines(vaccines);
@@ -553,7 +574,7 @@
             try {
                 const response = await fetch(VACCINES_API_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify(payload)
                 });
                 
@@ -570,7 +591,7 @@
         async function deleteVaccine(id) {
             if(!confirm("למחוק תיעוד זה?")) return;
             try {
-                await fetch(`${VACCINES_API_URL}/${id}`, { method: 'DELETE' });
+                await fetch(`${VACCINES_API_URL}/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
                 fetchVaccines();
             } catch (e) { console.error(e); }
         }
@@ -623,7 +644,7 @@
         // ==========================================
         async function fetchTodos() {
             try {
-                const response = await fetch(API_URL);
+                const response = await fetch(API_URL, { headers: getAuthHeaders() });
                 if (!response.ok) throw new Error('API failed');
                 const todos = await response.json();
                 renderTodos(todos);
@@ -690,7 +711,7 @@ async function addDogEvent(type) {
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify(payload)
                 });
                 if (!response.ok) throw new Error('API failed');
@@ -767,92 +788,84 @@ async function addDogEvent(type) {
         document.getElementById('todo-duedate').value = tomorrow.toISOString().split('T')[0];
 
         // ==========================================
-        // לוגיקת "הכלב שלי" (פרופיל ותמונה)
+        // לוגיקת "הכלב שלי" (חיבור ל-DB והעלאה ל-S3)
         // ==========================================
         
-        function handleImageUpload(event) {
+        async function handleImageUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const imgElement = document.getElementById('dog-profile-pic');
-                imgElement.src = e.target.result;
-                imgElement.style.display = 'block';
-                document.getElementById('dog-pic-placeholder').style.display = 'none';
-            };
-            reader.readAsDataURL(file);
+            // תצוגה מקומית מיידית
+            const imgElement = document.getElementById('dog-profile-pic');
+            imgElement.src = URL.createObjectURL(file);
+            imgElement.style.display = 'block';
+            document.getElementById('dog-pic-placeholder').style.display = 'none';
+
+            // העלאה לשרת (ול-S3)
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const token = localStorage.getItem('dogOpsToken');
+            try {
+                const response = await fetch('/api/profile/image', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }, // ללא Content-Type כדי שהדפדפן יגדיר Boundary
+                    body: formData
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    alert("התמונה הועלתה ונשמרה ב-S3 בהצלחה! 🐶");
+                    imgElement.src = data.image_url; // עדכון ללינק האמיתי מ-AWS
+                } else {
+                    alert("שגיאה בהעלאת התמונה: " + data.error);
+                }
+            } catch (e) {
+                console.error("Upload error:", e);
+                alert("אירעה שגיאה בהעלאת התמונה.");
+            }
         }
         
-        // פונקציה חכמה לחישוב גיל מדויק בשנים וחודשים
         function calculateDogAge() {
             const dobString = document.getElementById('dog-dob').value;
             const ageInput = document.getElementById('dog-age');
-            
-            if (!dobString) {
-                ageInput.value = '';
-                return;
-            }
+            if (!dobString) { ageInput.value = ''; return; }
             
             const birthDate = new Date(dobString);
             const today = new Date();
-            
-            // חישוב סך הכל החודשים שעברו
             let totalMonths = (today.getFullYear() - birthDate.getFullYear()) * 12 + (today.getMonth() - birthDate.getMonth());
+            if (today.getDate() < birthDate.getDate()) totalMonths--;
             
-            // תיקון קטן: אם עדיין לא הגענו ליום בחודש שבו הוא נולד, נוריד חודש אחד
-            if (today.getDate() < birthDate.getDate()) {
-                totalMonths--;
-            }
-            
-            if (totalMonths < 0) {
-                ageInput.value = 'טרם נולד 🐾';
-                return;
-            }
+            if (totalMonths < 0) { ageInput.value = 'טרם נולד 🐾'; return; }
             
             const years = Math.floor(totalMonths / 12);
             const months = totalMonths % 12;
-            
             let ageText = '';
             if (years > 0) ageText += `${years} שנים`;
             if (years > 0 && months > 0) ageText += ` ו-`;
             if (months > 0) ageText += `${months} חודשים`;
             if (years === 0 && months === 0) ageText = 'גור קטנטן!';
-            
             ageInput.value = ageText;
         }
 
-        // פונקציית הקסם: שולטת האם אפשר לערוך או לא
-        // פונקציית הקסם: שולטת האם אפשר לערוך או לא
         function setProfileState(isEditing) {
-            // רשימת כל השדות (מעודכן עם השדות החדשים)
             const inputs = ['dog-name', 'dog-breed', 'dog-city', 'dog-dob', 'dog-gender', 'dog-status', 'dog-weight', 'dog-chip', 'dog-allergies'];
-            inputs.forEach(id => {
-                document.getElementById(id).disabled = !isEditing;
-            });
-            
-            const picWrapper = document.getElementById('profile-pic-wrapper');
-            const btnSave = document.getElementById('btn-save-profile');
-            const btnEdit = document.getElementById('btn-edit-profile');
+            inputs.forEach(id => document.getElementById(id).disabled = !isEditing);
             
             if (isEditing) {
-                picWrapper.classList.remove('disabled');
-                btnSave.classList.remove('hidden');
-                btnEdit.classList.add('hidden');
+                document.getElementById('profile-pic-wrapper').classList.remove('disabled');
+                document.getElementById('btn-save-profile').classList.remove('hidden');
+                document.getElementById('btn-edit-profile').classList.add('hidden');
             } else {
-                picWrapper.classList.add('disabled');
-                btnSave.classList.add('hidden');
-                btnEdit.classList.remove('hidden');
+                document.getElementById('profile-pic-wrapper').classList.add('disabled');
+                document.getElementById('btn-save-profile').classList.add('hidden');
+                document.getElementById('btn-edit-profile').classList.remove('hidden');
             }
         }
 
-        function enableProfileEdit() {
-            setProfileState(true);
-        }
+        function enableProfileEdit() { setProfileState(true); }
 
-        function saveDogProfile() {
-            const imgElement = document.getElementById('dog-profile-pic');
-            
+        async function saveDogProfile() {
             const profileData = {
                 name: document.getElementById('dog-name').value,
                 breed: document.getElementById('dog-breed').value,
@@ -862,41 +875,55 @@ async function addDogEvent(type) {
                 status: document.getElementById('dog-status').value,
                 weight: document.getElementById('dog-weight').value,
                 chip: document.getElementById('dog-chip').value,
-                allergies: document.getElementById('dog-allergies').value,
-                image: imgElement.src.startsWith('data:') ? imgElement.src : null 
+                allergies: document.getElementById('dog-allergies').value
             };
 
-            localStorage.setItem('dogOpsProfile', JSON.stringify(profileData));
-            
-            setProfileState(false);
-            alert("פרטי הכלב נשמרו בהצלחה!");
+            try {
+                const response = await fetch('/api/profile', {
+                    method: 'PUT',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(profileData)
+                });
+                
+                if (response.ok) {
+                    setProfileState(false);
+                    alert("פרטי הכלב נשמרו בהצלחה בשרת!");
+                }
+            } catch (e) {
+                alert("שגיאה בשמירת הפרופיל.");
+            }
         }
 
-        function loadDogProfile() {
-            const savedData = localStorage.getItem('dogOpsProfile');
-            if (savedData) {
-                const profile = JSON.parse(savedData);
-                document.getElementById('dog-name').value = profile.name || '';
-                document.getElementById('dog-breed').value = profile.breed || '';
-                document.getElementById('dog-city').value = profile.city || '';
-                document.getElementById('dog-dob').value = profile.dob || '';
-                calculateDogAge();
-                document.getElementById('dog-gender').value = profile.gender || 'זכר';
-                document.getElementById('dog-status').value = profile.status || 'מסורס';
-                document.getElementById('dog-weight').value = profile.weight || '';
-                document.getElementById('dog-chip').value = profile.chip || '';
-                document.getElementById('dog-allergies').value = profile.allergies || '';
+        async function loadDogProfile() {
+            try {
+                const response = await fetch('/api/profile', { headers: getAuthHeaders() });
+                if (response.ok) {
+                    const profile = await response.json();
+                    if (profile.name) {
+                        document.getElementById('dog-name').value = profile.name || '';
+                        document.getElementById('dog-breed').value = profile.breed || '';
+                        document.getElementById('dog-city').value = profile.city || '';
+                        document.getElementById('dog-dob').value = profile.dob || '';
+                        calculateDogAge();
+                        document.getElementById('dog-gender').value = profile.gender || 'זכר';
+                        document.getElementById('dog-status').value = profile.status || 'מסורס';
+                        document.getElementById('dog-weight').value = profile.weight || '';
+                        document.getElementById('dog-chip').value = profile.chip || '';
+                        document.getElementById('dog-allergies').value = profile.allergies || '';
 
-                if (profile.image) {
-                    const imgElement = document.getElementById('dog-profile-pic');
-                    imgElement.src = profile.image;
-                    imgElement.style.display = 'block';
-                    document.getElementById('dog-pic-placeholder').style.display = 'none';
+                        if (profile.image_url) {
+                            const imgElement = document.getElementById('dog-profile-pic');
+                            imgElement.src = profile.image_url;
+                            imgElement.style.display = 'block';
+                            document.getElementById('dog-pic-placeholder').style.display = 'none';
+                        }
+                        setProfileState(false);
+                        return;
+                    }
                 }
-                setProfileState(false);
-            } else {
-                setProfileState(true);
-            }
+            } catch (e) { console.error("Error loading profile", e); }
+            
+            setProfileState(true);
         }
 
         // ==========================================
@@ -1228,7 +1255,7 @@ async function addDogEvent(type) {
 
         async function loadAndRenderSummaries() {
             try {
-                const response = await fetch('/api/summaries');
+                const response = await fetch('/api/summaries', { headers: getAuthHeaders() });
                 const summaries = await response.json();
                 renderSummariesList(summaries);
                 return summaries;
@@ -1267,7 +1294,7 @@ async function addDogEvent(type) {
 
         async function generateSummaryForDate(dateString, isAuto) {
             // שולף דיווחים מה-API (אפשר גם לקחת מהמשתנה המקומי אם שמרת אותו, אבל בטוח יותר למשוך הכל)
-            const response = await fetch(API_URL);
+            const response = await fetch(API_URL, { headers: getAuthHeaders() });
             const allTodos = await response.json();
             
             // מסנן רק אירועים של התאריך המבוקש
@@ -1283,7 +1310,7 @@ async function addDogEvent(type) {
             // שליחה ל-AI
             const aiRes = await fetch('/api/summaries/generate', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(),
                 body: JSON.stringify({ events: eventsTextList })
             });
 
@@ -1293,7 +1320,7 @@ async function addDogEvent(type) {
             // שמירה בשרת
             await fetch('/api/summaries', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(),
                 body: JSON.stringify({ date: dateString, text: aiData.summary, is_auto: isAuto })
             });
         }
@@ -1326,7 +1353,7 @@ async function addDogEvent(type) {
             
             try {
                 // מושכים את כל הדיווחים ואת כל הסיכומים
-                const todoRes = await fetch(API_URL);
+                const todoRes = await fetch(API_URL, { headers: getAuthHeaders() });
                 const allTodos = await todoRes.json();
                 const summaries = await loadAndRenderSummaries();
                 
