@@ -61,3 +61,4 @@ httpRoute:
 # הגדרות משתני סביבה עבור ספרינט 1
 # ערך ברירת מחדל גנרי - יידרס באופן אוטומטי על ידי ה-GitOps
 databaseUrl: "postgresql://postgres:postgres@postgres:5432/dogops"
+existingSecretName: "" # הוספנו את זה כדי לאפשר עקיפה של שם הסוד
