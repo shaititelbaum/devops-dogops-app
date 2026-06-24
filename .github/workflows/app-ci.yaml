@@ -82,11 +82,12 @@ jobs:
         git clone https://x-access-token:${GITOPS_TOKEN}@github.com/shaititelbaum/devops-dogops-gitops.git gitops-repo
         cd gitops-repo
         
-        sed -i "s/tag: .*/tag: \"$IMAGE_TAG\"/" environments/$ENV_DIR/backend.yaml
+        # 👇 התיקון: שימוש ב-yq ושינוי נתיב הקובץ
+        yq -i ".backend.imageTag = \"$IMAGE_TAG\"" environments/values-$ENV_DIR.yaml
         
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git add environments/$ENV_DIR/backend.yaml
+        git add environments/values-$ENV_DIR.yaml
         git commit -m "chore(deploy): auto-update backend to $IMAGE_TAG in $ENV_DIR [skip ci]" || echo "No changes"
         git pull --rebase origin master
         git push origin master
@@ -146,11 +147,12 @@ jobs:
         git clone https://x-access-token:${GITOPS_TOKEN}@github.com/shaititelbaum/devops-dogops-gitops.git gitops-repo
         cd gitops-repo
         
-        sed -i "s/tag: .*/tag: \"$IMAGE_TAG\"/" environments/$ENV_DIR/frontend.yaml
+        # 👇 התיקון: שימוש ב-yq לעדכון הבלוק של ה-frontend בלבד
+        yq -i ".frontend.imageTag = \"$IMAGE_TAG\"" environments/values-$ENV_DIR.yaml
         
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git add environments/$ENV_DIR/frontend.yaml
+        git add environments/values-$ENV_DIR.yaml
         git commit -m "chore(deploy): auto-update frontend to $IMAGE_TAG in $ENV_DIR [skip ci]" || echo "No changes"
         git pull --rebase origin master
         git push origin master
