@@ -18,22 +18,21 @@ persistence:
   size: "2Gi"
 
 auth:
-  existingSecret: "test-db-credentials"
-  # הוראה מפורשת ל-Chart להשתמש במפתחות שבנינו ב-ExternalSecret
+  # נשתמש בפורמט גנרי שנתאים ב-GitOps
+  existingSecret: "{{ .Values.databaseSecretName | default \"db-credentials\" }}"
   secretPasswordKey: "postgres-password" 
   usernameKey: "username"
 
-# בונוס: דריסה מוחלטת דרך משתני סביבה כדי למנוע דריסת ברירת מחדל
 extraEnvVars:
   - name: POSTGRES_USER
     valueFrom:
       secretKeyRef:
-        name: test-db-credentials
+        name: "{{ .Values.databaseSecretName | default \"db-credentials\" }}"
         key: username
   - name: POSTGRES_PASSWORD
     valueFrom:
       secretKeyRef:
-        name: test-db-credentials
+        name: "{{ .Values.databaseSecretName | default \"db-credentials\" }}"
         key: postgres-password
 
 serviceAccount:
