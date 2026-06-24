@@ -46,16 +46,19 @@ spec:
               protocol: TCP
           
           # --- הרכבה דינמית ומאובטחת של ה-DATABASE_URL מתוך AWS Secrets Manager וקוברנטיס ---
+          # --- הרכבה דינמית ומאובטחת של ה-DATABASE_URL מתוך AWS Secrets Manager וקוברנטיס ---
           env:
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: {{ printf "%s-db-credentials" .Release.Namespace }}
+                  # 👇 התיקון: מקשיב ל-Values או משתמש בברירת מחדל
+                  name: {{ .Values.existingSecretName | default "db-credentials" }}
                   key: username
             - name: DB_PASS
               valueFrom:
                 secretKeyRef:
-                  name: {{ printf "%s-db-credentials" .Release.Namespace }}
+                  # 👇 התיקון: מקשיב ל-Values או משתמש בברירת מחדל
+                  name: {{ .Values.existingSecretName | default "db-credentials" }}
                   key: password
             - name: DB_HOST
               value: {{ printf "dogops-postgres-%s" .Release.Namespace }}
