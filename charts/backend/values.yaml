@@ -64,3 +64,4 @@ databaseUrl: "postgresql://postgres:postgres@postgres:5432/dogops"
 existingSecretName: "" # הוספנו את זה כדי לאפשר עקיפה של שם הסוד
 # הוספנו כדי שה-Chart ידע לקבל את השם מה-GitOps
 databaseName: "dogopsdb"
+s3BucketName: "devops-dogops-images"
