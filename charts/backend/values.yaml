@@ -62,3 +62,5 @@ httpRoute:
 # ערך ברירת מחדל גנרי - יידרס באופן אוטומטי על ידי ה-GitOps
 databaseUrl: "postgresql://postgres:postgres@postgres:5432/dogops"
 existingSecretName: "" # הוספנו את זה כדי לאפשר עקיפה של שם הסוד
+# הוספנו כדי שה-Chart ידע לקבל את השם מה-GitOps
+databaseName: "dogopsdb"
