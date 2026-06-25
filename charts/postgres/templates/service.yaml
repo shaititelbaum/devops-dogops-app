@@ -1,4 +1,4 @@
-{{- if .Values.postgres.enabled }}
+{{- if dig "postgres" "enabled" false .Values }}
 apiVersion: v1
 kind: Service
 metadata:
