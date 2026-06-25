@@ -56,4 +56,5 @@ httpRoute:
 ingress:
   enabled: false
 
-enabled: true
+postgres:
+  enabled: true
