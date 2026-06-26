@@ -36,7 +36,15 @@
     <div class="todo-container" id="register-container" style="display: none; max-width: 400px; justify-content: center;">
         <h1><span class="emoji-paw">🐾</span> הרשמה</h1>
         <p class="subtitle">הצטרף לקהילת DogOps</p>
-        
+
+        <div class="input-subgroup full-width" style="margin-bottom: 15px;">
+                <label>שם מלא שלך:</label>
+                <input type="text" id="reg-fullname" placeholder="איך קוראים לך?">
+            </div>
+            <div class="input-subgroup full-width" style="margin-bottom: 15px;">
+                <label>שם הכלב:</label>
+                <input type="text" id="reg-dogname" placeholder="איך קוראים לכלב/ה?">
+            </div>
         <div class="dog-details-card" style="margin: 0 auto; background: transparent; border: none; padding: 10px;">
             <div class="input-subgroup full-width" style="margin-bottom: 15px;">
                 <label>אימייל:</label>
@@ -67,7 +75,9 @@
             <span class="emoji-paw">🐾</span>
             DogOps Dashboard
         </h1>
-        <p class="subtitle">יומן מעקב התנהגות ואילוף בשטח</p>
+        <p class="subtitle">יומן מעקב התנהגות ואילוף בשטח</p>o
+
+        <div id="welcome-greeting" class="welcome-greeting" style="display: none;"></div>
 
         <div class="nav-menu">
             <button id="tab-dashboard" class="nav-item active" onclick="switchView('dashboard')">📋 לוח דיווח</button>
@@ -359,17 +369,23 @@
             const email = document.getElementById('reg-email').value;
             const password = document.getElementById('reg-password').value;
             const confirmPassword = document.getElementById('reg-password-confirm').value;
+            const fullName = document.getElementById('reg-fullname').value; // 👈 חדש
+            const dogName = document.getElementById('reg-dogname').value;   // 👈 חדש
 
             if (!email.includes('@') || email.length < 5) return alert("נא להזין אימייל תקין.");
             if (password.length < 6) return alert("הסיסמה חייבת להכיל לפחות 6 תווים.");
             if (password !== confirmPassword) return alert("הסיסמאות לא תואמות!");
+            if (fullName.length < 2) return alert("נא להזין שם מלא.");        // 👈 חדש
+            if (dogName.length < 2) return alert("נא להזין את שם הכלב.");      // 👈 חדש
 
             try {
                 const response = await fetch('/api/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
+                    // 👈 חדש: מכניסים את הנתונים החדשים לבקשה
+                    body: JSON.stringify({ email, password, full_name: fullName, dog_name: dogName }) 
                 });
+                // ... המשך הפונקציה נשאר זהה ...
                 const data = await response.json();
                 if (response.ok) {
                     alert("ההרשמה הצליחה! עכשיו אפשר להתחבר.");
@@ -899,6 +915,13 @@ async function addDogEvent(type) {
         const response = await fetch('/api/profile', { headers: getAuthHeaders() });
         if (response.ok) {
             const profile = await response.json();
+        
+        // --- הדלקת כיתוב הברכה הדינאמי ---
+            if (profile.owner_name && profile.name) {
+                const greetingEl = document.getElementById('welcome-greeting');
+                greetingEl.innerText = `אהלן ${profile.owner_name}, ${profile.name} כבר מוכן לאימון! 🦴`;
+                greetingEl.style.display = 'block';
+            }
             
             // קודם כל ולפני הכל: אם יש תמונה מהשרת, תציג אותה!
             if (profile.image_url) {
