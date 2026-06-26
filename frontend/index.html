@@ -630,21 +630,19 @@
             currentView = viewName;
             const container = document.getElementById('main-container');
 
-            // --- 1. טריק האנימציה: שמירת הגובה הישן ---
+            // --- 1. מדידה סופר-מדויקת (ללא אנימציה) ---
             const startHeight = container.offsetHeight;
+            const wasWide = container.classList.contains('wide-mode');
+            
+            // מכבים את האנימציות לשבריר שנייה כדי למדוד את העתיד
+            container.style.transition = 'none'; 
+            
+            if (viewName === 'dashboard') container.classList.remove('wide-mode');
+            else container.classList.add('wide-mode');
 
-            const sectionMap = {
-                'dashboard': 'input-section',
-                'mydog': 'mydog-section',
-                'history': 'history-section',
-                'vaccines': 'vaccine-section',
-                'summaries': 'summaries-section',
-                'ai': 'ai-section'
-            };
-
+            const sectionMap = { 'dashboard': 'input-section', 'mydog': 'mydog-section', 'history': 'history-section', 'vaccines': 'vaccine-section', 'summaries': 'summaries-section', 'ai': 'ai-section' };
             const sections = ['input-section', 'mydog-section', 'history-section', 'vaccine-section', 'summaries-section', 'ai-section'];
             
-            // מציגים רק את האזור הנבחר
             sections.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
@@ -653,35 +651,34 @@
                 }
             }); 
             
-            // ניהול ה-active בתפריט
+            container.style.height = 'auto'; 
+            const endHeight = container.offsetHeight; // הגובה האמיתי הסופי!
+
+            // --- 2. מחזירים את המצב אחורה ומתחילים אנימציה נקייה ---
+            if (wasWide) container.classList.add('wide-mode');
+            else container.classList.remove('wide-mode');
+            
+            container.style.height = startHeight + 'px';
+            container.offsetHeight; // Reflow כפוי לדפדפן
+
+            container.style.transition = ''; // מדליקים אנימציה
+            
+            // תנועה חלקה יחד של גובה ורוחב למצב הסופי 
+            if (viewName === 'dashboard') container.classList.remove('wide-mode');
+            else container.classList.add('wide-mode');
+            container.style.height = endHeight + 'px';
+
             document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
             const activeTab = document.getElementById(`tab-${viewName}`);
             if (activeTab) activeTab.classList.add('active');
 
-            // הוספה והסרה של wide-mode בשביל אנימציית ההתרחבות 
-            if (viewName === 'dashboard') {
-                container.classList.remove('wide-mode');
-            } else {
-                container.classList.add('wide-mode');
-            }
-
-            // --- 2. המשך הטריק: חישוב הגובה החדש והחלת האנימציה ---
-            container.style.height = 'auto'; // נותנים לדפדפן לחשב טבעית את הגובה של הלשונית החדשה
-            const endHeight = container.offsetHeight; // שומרים את הגובה החדש
-            
-            container.style.height = startHeight + 'px'; // מחזירים לגובה הישן מיד לפני שהמשתמש שם לב
-            container.offsetHeight; // פקודת קסם (Reflow) שכופה על הדפדפן לקלוט את הגובה
-            container.style.height = endHeight + 'px'; // מפעילים את האנימציה לגובה החדש
-
-            // מנקים את הקיבוע כדי שהחלון יוכל להמשיך לגדול אם יתווסף תוכן (כמו טקסט של ה-AI)
+            // משחררים את הגובה כשהאנימציה מסתיימת (קצת אחרי 0.4s)
             setTimeout(() => {
-                // רק אם לא החלפנו לשונית באמצע
                 if (currentView === viewName) {
                     container.style.height = 'auto';
                 }
-            }, 350);
+            }, 450);
 
-            // משיכת נתונים מהשרת
             if (viewName === 'history') fetchTodos();
             if (viewName === 'vaccines') fetchVaccines();
         }
