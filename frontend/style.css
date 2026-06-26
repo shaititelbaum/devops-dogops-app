@@ -1298,3 +1298,65 @@ li {
     from { transform: scale(0.8); opacity: 0; }
     to { transform: scale(1); opacity: 1; }
 }
+
+/* ==========================================
+   עיצוב שדות חיפוש ואימות (Validation)
+   ========================================== */
+.input-with-icon {
+    position: relative;
+    width: 100%;
+}
+
+.input-with-icon input {
+    width: 100%;
+    box-sizing: border-box;
+    padding-left: 35px !important; /* פינוי מקום לאייקון בצד שמאל (מערכת RTL) */
+}
+
+.validation-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.password-reqs {
+    display: none;
+    position: absolute;
+    top: 100%; 
+    right: 0;
+    width: 100%;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 12px;
+    border-radius: 8px;
+    z-index: 100;
+    margin-top: 5px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    text-align: right;
+    box-sizing: border-box;
+}
+
+#reg-password:focus ~ .password-reqs, 
+#reg-password:hover ~ .password-reqs,
+.password-reqs:hover {
+    display: block;
+}
+
+.req-item {
+    margin-bottom: 6px;
+    color: #fca5a5;
+    font-size: 13px;
+    transition: color 0.3s;
+}
+
+.req-item:last-child {
+    margin-bottom: 0;
+}
+
+.req-item.valid {
+    color: #6ee7b7;
+}

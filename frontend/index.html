@@ -38,17 +38,26 @@
         <p class="subtitle">הצטרף לקהילת DogOps</p>
 
         <div class="input-subgroup full-width" style="margin-bottom: 15px;">
-                <label>שם פרטי:</label>
-                <input type="text" id="reg-firstname" placeholder="למשל: שי">
+            <label>שם פרטי:</label>
+            <div class="input-with-icon">
+                <input type="text" id="reg-firstname" placeholder="למשל: שי" oninput="validateName('reg-firstname', 'fn-icon')">
+                <span id="fn-icon" class="validation-icon"></span>
             </div>
-            <div class="input-subgroup full-width" style="margin-bottom: 15px;">
-                <label>שם משפחה:</label>
-                <input type="text" id="reg-lastname" placeholder="למשל: כהן">
+        </div>
+        <div class="input-subgroup full-width" style="margin-bottom: 15px;">
+            <label>שם משפחה:</label>
+            <div class="input-with-icon">
+                <input type="text" id="reg-lastname" placeholder="למשל: כהן" oninput="validateName('reg-lastname', 'ln-icon')">
+                <span id="ln-icon" class="validation-icon"></span>
             </div>
-            <div class="input-subgroup full-width" style="margin-bottom: 15px;">
-                <label>שם הכלב:</label>
-                <input type="text" id="reg-dogname" placeholder="איך קוראים לכלב/ה?">
+        </div>
+        <div class="input-subgroup full-width" style="margin-bottom: 15px;">
+            <label>שם הכלב/ה:</label>
+            <div class="input-with-icon">
+                <input type="text" id="reg-dogname" placeholder="איך קוראים לכלב/ה?" oninput="validateName('reg-dogname', 'dn-icon')">
+                <span id="dn-icon" class="validation-icon"></span>
             </div>
+        </div>
 
         <div class="dog-details-card" style="margin: 0 auto; background: transparent; border: none; padding: 10px;">
             <div class="input-subgroup full-width" style="margin-bottom: 15px;">
@@ -57,16 +66,29 @@
             </div>
             <div class="input-subgroup full-width" style="margin-bottom: 15px;">
                 <label>סיסמה:</label>
-                <input type="password" id="reg-password" placeholder="••••••••">
+                <div class="input-with-icon">
+                    <input type="password" id="reg-password" placeholder="••••••••" oninput="validatePassword()">
+                    <span id="pass-icon" class="validation-icon"></span>
+                    <div id="password-reqs" class="password-reqs">
+                        <div id="req-length" class="req-item">❌ לפחות 8 תווים</div>
+                        <div id="req-upper" class="req-item">❌ אות גדולה באנגלית (A-Z)</div>
+                        <div id="req-lower" class="req-item">❌ אות קטנה באנגלית (a-z)</div>
+                        <div id="req-num" class="req-item">❌ מספר (0-9)</div>
+                        <div id="req-spec" class="req-item">❌ תו מיוחד (!@#$%^&*)</div>
+                    </div>
+                </div>
             </div>
             <div class="input-subgroup full-width" style="margin-bottom: 25px;">
                 <label>אימות סיסמה:</label>
-                <input type="password" id="reg-password-confirm" placeholder="••••••••">
+                <div class="input-with-icon">
+                    <input type="password" id="reg-password-confirm" placeholder="••••••••" oninput="validateConfirmPassword()">
+                    <span id="confirm-icon" class="validation-icon"></span>
+                </div>
             </div>
             
             <button class="btn-login" onclick="performRegister()" style="width: 100%; font-size: 18px; padding: 16px;">צור חשבון</button> 
             <button class="btn-register" onclick="toggleForms()">כבר רשום? התחבר כאן</button>
-        </div> 
+        </div>
 
     </div><div class="todo-container" id="main-container" style="display: none;"> 
         <button class="btn-header-logout" onclick="performLogout()" title="התנתק">
@@ -380,14 +402,20 @@
             const dogName = document.getElementById('reg-dogname').value.trim(); 
 
             if (!email.includes('@') || email.length < 5) return alert("נא להזין אימייל תקין.");
-            if (password.length < 6) return alert("הסיסמה חייבת להכיל לפחות 6 תווים.");
+            
+            const nameRegex = /^[A-Za-zא-ת\s]+$/;
+            if (!nameRegex.test(firstName) || firstName.length < 2) return alert("נא להזין שם פרטי תקין (אותיות עברית/אנגלית בלבד).");
+            if (!nameRegex.test(lastName) || lastName.length < 2) return alert("נא להזין שם משפחה תקין (אותיות עברית/אנגלית בלבד).");
+            if (!nameRegex.test(dogName) || dogName.length < 2) return alert("נא להזין את שם הכלב (אותיות עברית/אנגלית בלבד).");
+
+            const passValid = password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password) && /[!@#$%^&*]/.test(password);
+            if (!passValid) return alert("הסיסמה לא עומדת בדרישות האבטחה.");
+            
             if (password !== confirmPassword) return alert("הסיסמאות לא תואמות!");
-            if (firstName.length < 2) return alert("נא להזין שם פרטי תקין.");
-            if (lastName.length < 2) return alert("נא להזין שם משפחה תקין.");
-            if (dogName.length < 2) return alert("נא להזין את שם הכלב.");      // 👈 חדש
 
             try {
                 const response = await fetch('/api/register', {
+                // ... (המשך הפונקציה נשאר אותו דבר)
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     // 👈 חדש: מכניסים את הנתונים החדשים לבקשה
@@ -403,6 +431,87 @@
                 }
             } catch (e) {
                 alert("שגיאת תקשורת מול השרת");
+            }
+        }
+
+        function validateName(inputId, iconId) {
+            const inputEl = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            const val = inputEl.value;
+            
+            if (val.length === 0) {
+                icon.innerText = '';
+                inputEl.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                return false;
+            }
+            
+            const nameRegex = /^[A-Za-zא-ת\s]+$/;
+            if (nameRegex.test(val) && val.trim().length >= 2) {
+                icon.innerText = '✅';
+                inputEl.style.borderColor = '#10b981';
+                return true;
+            } else {
+                icon.innerText = '❌';
+                inputEl.style.borderColor = '#f43f5e';
+                return false;
+            }
+        }
+
+        function validatePassword() {
+            const password = document.getElementById('reg-password').value;
+            const icon = document.getElementById('pass-icon');
+            const inputEl = document.getElementById('reg-password');
+            
+            const reqs = {
+                'req-length': password.length >= 8,
+                'req-upper': /[A-Z]/.test(password),
+                'req-lower': /[a-z]/.test(password),
+                'req-num': /[0-9]/.test(password),
+                'req-spec': /[!@#$%^&*]/.test(password)
+            };
+            
+            let allValid = true;
+            for (let id in reqs) {
+                const el = document.getElementById(id);
+                if (reqs[id]) {
+                    el.classList.add('valid');
+                    el.innerText = el.innerText.replace('❌', '✅');
+                } else {
+                    el.classList.remove('valid');
+                    el.innerText = el.innerText.replace('✅', '❌');
+                    allValid = false;
+                }
+            }
+            
+            if (password.length === 0) {
+                icon.innerText = '';
+                inputEl.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+            } else if (allValid) {
+                icon.innerText = '✅';
+                inputEl.style.borderColor = '#10b981';
+            } else {
+                icon.innerText = '❌';
+                inputEl.style.borderColor = '#f43f5e';
+            }
+            
+            validateConfirmPassword(); 
+        }
+
+        function validateConfirmPassword() {
+            const password = document.getElementById('reg-password').value;
+            const confirm = document.getElementById('reg-password-confirm').value;
+            const icon = document.getElementById('confirm-icon');
+            const inputEl = document.getElementById('reg-password-confirm');
+            
+            if (confirm.length === 0) {
+                icon.innerText = '';
+                inputEl.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+            } else if (password === confirm) {
+                icon.innerText = '✅';
+                inputEl.style.borderColor = '#10b981';
+            } else {
+                icon.innerText = '❌';
+                inputEl.style.borderColor = '#f43f5e';
             }
         }
 
@@ -951,7 +1060,7 @@ async function addDogEvent(type) {
                 else if (hour >= 12 && hour < 18) timeGreeting = "צהריים טובים";
 
                 const greetingEl = document.getElementById('welcome-greeting');
-                greetingEl.innerText = `היי ${profile.owner_first_name} ו${profile.name}, ${timeGreeting}, אילוף מוצלח! 🐾`;
+                greetingEl.innerText = `היי ${profile.owner_first_name} ו${profile.name}, ${timeGreeting} ואילוף מוצלח ! 🐾`;
                 greetingEl.style.display = 'block';
             }
             
