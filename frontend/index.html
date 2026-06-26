@@ -629,13 +629,16 @@
         function switchView(viewName) {
             currentView = viewName;
             const container = document.getElementById('main-container');
-            
+
+            // --- 1. טריק האנימציה: שמירת הגובה הישן ---
+            const startHeight = container.offsetHeight;
+
             const sectionMap = {
                 'dashboard': 'input-section',
                 'mydog': 'mydog-section',
                 'history': 'history-section',
                 'vaccines': 'vaccine-section',
-                'summaries': 'summaries-section', // <--- חדש
+                'summaries': 'summaries-section',
                 'ai': 'ai-section'
             };
 
@@ -661,6 +664,22 @@
             } else {
                 container.classList.add('wide-mode');
             }
+
+            // --- 2. המשך הטריק: חישוב הגובה החדש והחלת האנימציה ---
+            container.style.height = 'auto'; // נותנים לדפדפן לחשב טבעית את הגובה של הלשונית החדשה
+            const endHeight = container.offsetHeight; // שומרים את הגובה החדש
+            
+            container.style.height = startHeight + 'px'; // מחזירים לגובה הישן מיד לפני שהמשתמש שם לב
+            container.offsetHeight; // פקודת קסם (Reflow) שכופה על הדפדפן לקלוט את הגובה
+            container.style.height = endHeight + 'px'; // מפעילים את האנימציה לגובה החדש
+
+            // מנקים את הקיבוע כדי שהחלון יוכל להמשיך לגדול אם יתווסף תוכן (כמו טקסט של ה-AI)
+            setTimeout(() => {
+                // רק אם לא החלפנו לשונית באמצע
+                if (currentView === viewName) {
+                    container.style.height = 'auto';
+                }
+            }, 350);
 
             // משיכת נתונים מהשרת
             if (viewName === 'history') fetchTodos();
