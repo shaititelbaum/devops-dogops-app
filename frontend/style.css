@@ -1233,3 +1233,14 @@ li {
     border-color: rgba(255, 255, 255, 0.3) !important;
     transform: translateY(-2px);
 }
+
+.welcome-greeting {
+    color: #bae6fd;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    margin-top: -10px;
+    margin-bottom: 20px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    animation: fadeIn 0.5s ease-in-out;
+}

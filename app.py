@@ -32,6 +32,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
+    full_name = db.Column(db.String(100), nullable=True) # 👈 השורה שהוספנו
 
 class DogProfile(db.Model):
     __tablename__ = 'dog_profiles'
@@ -101,14 +102,23 @@ def register():
     data = request.json
     email = data.get('email')
     password = data.get('password')
+    full_name = data.get('full_name') # 👈 משיכת שם הבעלים
+    dog_name = data.get('dog_name')   # 👈 משיכת שם הכלב
 
     if User.query.filter_by(email=email).first():
         return jsonify({"error": "האימייל כבר קיים במערכת"}), 400
 
     hashed_pw = generate_password_hash(password)
-    new_user = User(email=email, password_hash=hashed_pw)
+    # שמירת המשתמש עם השם המלא
+    new_user = User(email=email, password_hash=hashed_pw, full_name=full_name)
     db.session.add(new_user)
     db.session.commit()
+
+    # 👈 חדש: יוצרים לכלב פרופיל ראשוני מיד בסיום ההרשמה!
+    if dog_name:
+        new_dog = DogProfile(user_id=new_user.id, name=dog_name)
+        db.session.add(new_dog)
+        db.session.commit()
 
     return jsonify({"message": "המשתמש נוצר בהצלחה!"}), 201
 
@@ -134,9 +144,11 @@ def dog_profile():
     profile = DogProfile.query.filter_by(user_id=current_user_id).first()
     
     if request.method == 'GET':
+        user = User.query.filter_by(id=current_user_id).first() # 👈 שולפים את המשתמש
         if not profile:
-            return jsonify({}), 200
+            return jsonify({"owner_name": user.full_name if user else ""}), 200
         return jsonify({
+            "owner_name": user.full_name if user else "", # 👈 מחזירים את שם הבעלים ל-Frontend
             "name": profile.name, "breed": profile.breed, "city": profile.city,
             "dob": profile.dob, "gender": profile.gender, "status": profile.status,
             "weight": profile.weight, "chip": profile.chip, "allergies": profile.allergies,
