@@ -18,20 +18,19 @@
         <div class="dog-details-card" style="margin: 0 auto; background: transparent; border: none; padding: 10px;">
             <div class="input-subgroup full-width" style="margin-bottom: 15px;">
                 <label>אימייל:</label>
-                <input type="email" id="login-email" placeholder="name@example.com">
+                <div class="input-with-icon">
+                    <input type="email" id="login-email" placeholder="name@example.com" autocomplete="email" oninput="validateLoginFields()">
+                    <span id="login-email-icon" class="validation-icon"></span>
+                </div>
             </div>
             
             <div class="input-subgroup full-width" style="margin-bottom: 25px;">
                 <label>סיסמה:</label>
-                <input type="password" id="login-password" placeholder="••••••••">
+                <div class="input-with-icon">
+                    <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" oninput="validateLoginFields()">
+                    <span id="login-pass-icon" class="validation-icon"></span>
+                </div>
             </div>
-            
-            <button class="btn-login" onclick="performLogin()" style="width: 100%; font-size: 18px; padding: 16px;">
-                הכנס אותי 🦴
-            </button>
-            <button class="btn-register" onclick="toggleForms()">אין לך חשבון? הירשם עכשיו</button>
-        </div>
-    </div>
 
     <div class="todo-container" id="register-container" style="display: none; max-width: 400px; justify-content: center;">
         <h1><span class="emoji-paw">🐾</span> הרשמה</h1>
@@ -62,12 +61,16 @@
         <div class="dog-details-card" style="margin: 0 auto; background: transparent; border: none; padding: 10px;">
             <div class="input-subgroup full-width" style="margin-bottom: 15px;">
                 <label>אימייל:</label>
-                <input type="email" id="reg-email" placeholder="name@example.com">
+                <div class="input-with-icon">
+                    <input type="email" id="reg-email" placeholder="name@example.com" autocomplete="off" oninput="validateRegEmail()">
+                    <span id="reg-email-icon" class="validation-icon"></span>
+                </div>
+                <div id="email-error-msg" style="color: #fca5a5; font-size: 12px; margin-top: 4px; display: none;">המייל כבר רשום במערכת!</div>
             </div>
             <div class="input-subgroup full-width" style="margin-bottom: 15px;">
                 <label>סיסמה:</label>
                 <div class="input-with-icon">
-                    <input type="password" id="reg-password" placeholder="••••••••" oninput="validatePassword()">
+                    <input type="password" id="reg-password" placeholder="••••••••" autocomplete="new-password" oninput="validatePassword()">
                     <span id="pass-icon" class="validation-icon"></span>
                     <div id="password-reqs" class="password-reqs">
                         <div id="req-length" class="req-item">❌ לפחות 8 תווים</div>
@@ -81,7 +84,7 @@
             <div class="input-subgroup full-width" style="margin-bottom: 25px;">
                 <label>אימות סיסמה:</label>
                 <div class="input-with-icon">
-                    <input type="password" id="reg-password-confirm" placeholder="••••••••" oninput="validateConfirmPassword()">
+                    <input type="password" id="reg-password-confirm" placeholder="••••••••" autocomplete="new-password" oninput="validateConfirmPassword()">
                     <span id="confirm-icon" class="validation-icon"></span>
                 </div>
             </div>
@@ -402,8 +405,9 @@
             const dogName = document.getElementById('reg-dogname').value.trim(); 
 
             if (!email.includes('@') || email.length < 5) return alert("נא להזין אימייל תקין.");
-            
-            const nameRegex = /^[A-Za-zא-ת\s]+$/;
+            if (!isEmailValidForReg) return alert("האימייל שגוי או שכבר קיים במערכת.");
+
+            const nameRegex = /^[A-Za-zא-ת\s\'-]+$/;
             if (!nameRegex.test(firstName) || firstName.length < 2) return alert("נא להזין שם פרטי תקין (אותיות עברית/אנגלית בלבד).");
             if (!nameRegex.test(lastName) || lastName.length < 2) return alert("נא להזין שם משפחה תקין (אותיות עברית/אנגלית בלבד).");
             if (!nameRegex.test(dogName) || dogName.length < 2) return alert("נא להזין את שם הכלב (אותיות עברית/אנגלית בלבד).");
@@ -422,9 +426,12 @@
                     body: JSON.stringify({ email, password, first_name: firstName, last_name: lastName, dog_name: dogName }) 
                 });
                 // ... המשך הפונקציה נשאר זהה ...
-                const data = await response.json();
                 if (response.ok) {
                     alert("ההרשמה הצליחה! עכשיו אפשר להתחבר.");
+                    // מנקה את השדות כדי שהדפדפן לא יזכור אותם בטופס ההתחברות בטעות
+                    document.getElementById('reg-email').value = "";
+                    document.getElementById('reg-password').value = "";
+                    document.getElementById('reg-password-confirm').value = "";
                     toggleForms();
                 } else {
                     alert("שגיאה בהרשמה: " + data.error);
@@ -432,6 +439,71 @@
             } catch (e) {
                 alert("שגיאת תקשורת מול השרת");
             }
+        }
+
+        let emailCheckTimeout = null;
+        let isEmailValidForReg = false;
+
+        async function validateRegEmail() {
+            const el = document.getElementById('reg-email');
+            const icon = document.getElementById('reg-email-icon');
+            const errMsg = document.getElementById('email-error-msg');
+            const val = el.value.trim();
+
+            isEmailValidForReg = false;
+
+            if(val.length === 0) { 
+                icon.innerText = ''; 
+                el.style.borderColor = 'rgba(255, 255, 255, 0.4)'; 
+                errMsg.style.display = 'none';
+                return; 
+            }
+
+            if(!val.includes('@') || !val.includes('.')) {
+                icon.innerText = '❌'; 
+                el.style.borderColor = '#f43f5e';
+                errMsg.style.display = 'none';
+                return;
+            }
+
+            icon.innerText = '⏳'; // מראה טעינה בזמן פנייה לשרת
+            clearTimeout(emailCheckTimeout);
+            
+            // מנגנון Debounce: מחכה חצי שניה אחרי סיום ההקלדה כדי לא להציף את השרת
+            emailCheckTimeout = setTimeout(async () => {
+                try {
+                    const res = await fetch('/api/check_email?email=' + encodeURIComponent(val));
+                    const data = await res.json();
+                    if(data.exists) {
+                        icon.innerText = '❌';
+                        el.style.borderColor = '#f43f5e';
+                        errMsg.style.display = 'block';
+                        isEmailValidForReg = false;
+                    } else {
+                        icon.innerText = '✅';
+                        el.style.borderColor = '#10b981';
+                        errMsg.style.display = 'none';
+                        isEmailValidForReg = true;
+                    }
+                } catch(e) {
+                    icon.innerText = '❓';
+                }
+            }, 500);
+        }
+
+        // --- הוספת מחוונים (וי/איקס) לחלון ההתחברות ---
+        function validateLoginFields() {
+            const emailEl = document.getElementById('login-email');
+            const emailIcon = document.getElementById('login-email-icon');
+            if(emailEl.value.length === 0) { emailIcon.innerText = ''; emailEl.style.borderColor = 'rgba(255, 255, 255, 0.4)'; }
+            else if(emailEl.value.includes('@') && emailEl.value.includes('.')) { emailIcon.innerText = '✅'; emailEl.style.borderColor = '#10b981'; }
+            else { emailIcon.innerText = ''; emailEl.style.borderColor = '#f43f5e'; }
+
+            const passEl = document.getElementById('login-password');
+            const passIcon = document.getElementById('login-pass-icon');
+            if(passEl.value.length === 0) { passIcon.innerText = ''; passEl.style.borderColor = 'rgba(255, 255, 255, 0.4)'; }
+            else if(passEl.value.length >= 6) { passIcon.innerText = '✅'; passEl.style.borderColor = '#10b981'; }
+            else { passIcon.innerText = ''; passEl.style.borderColor = 'rgba(255, 255, 255, 0.4)'; }
         }
 
         function validateName(inputId, iconId) {
@@ -445,7 +517,7 @@
                 return false;
             }
             
-            const nameRegex = /^[A-Za-zא-ת\s]+$/;
+            const nameRegex = /^[A-Za-zא-ת\s\'-]+$/;
             if (nameRegex.test(val) && val.trim().length >= 2) {
                 icon.innerText = '✅';
                 inputEl.style.borderColor = '#10b981';
@@ -1060,7 +1132,7 @@ async function addDogEvent(type) {
                 else if (hour >= 12 && hour < 18) timeGreeting = "צהריים טובים";
 
                 const greetingEl = document.getElementById('welcome-greeting');
-                greetingEl.innerText = `היי ${profile.owner_first_name} ו${profile.name}, ${timeGreeting} ואילוף מוצלח ! 🐾`;
+                greetingEl.innerText = `היי ${profile.owner_first_name} ו${profile.name}, ${timeGreeting} ואילוף מוצלח  🐾`;
                 greetingEl.style.display = 'block';
             }
             

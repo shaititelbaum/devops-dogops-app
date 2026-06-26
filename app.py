@@ -98,6 +98,18 @@ def health_check():
 # ==========================================
 # Routes: Authentication
 # ==========================================
+@app.route('/api/check_email', methods=['GET'])
+def check_email():
+    email = request.args.get('email')
+    if not email:
+        return jsonify({"error": "No email provided"}), 400
+    
+    # חיפוש במסד הנתונים אם המייל כבר קיים
+    user = User.query.filter_by(email=email).first()
+    if user:
+        return jsonify({"exists": True}), 200
+    return jsonify({"exists": False}), 200
+
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.json
@@ -193,9 +205,17 @@ def upload_image():
 
     # יצירת שם קובץ ייחודי וקצר כדי למנוע דריסות ב-S3
     ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'jpg'
-    filename = f"user_{current_user_id}_{uuid.uuid4().hex[:8]}.{ext}"
+    prefix = f"user_{current_user_id}_profile"
+    filename = f"{prefix}.{ext}" # הסרנו את ה-UUID!
 
     try:
+        # 1. חיפוש ומחיקה של תמונות קודמות של אותו משתמש כדי למנוע הצטברות זבל ב-S3
+        response_list = s3_client.list_objects_v2(Bucket=S3_BUCKET, Prefix=prefix)
+        if 'Contents' in response_list:
+            objects_to_delete = [{'Key': obj['Key']} for obj in response_list['Contents']]
+            s3_client.delete_objects(Bucket=S3_BUCKET, Delete={'Objects': objects_to_delete})
+            
+        # 2. העלאת התמונה החדשה לאמזון
         s3_client.upload_fileobj(
             file,
             S3_BUCKET,
