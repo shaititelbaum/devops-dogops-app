@@ -32,7 +32,8 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
-    full_name = db.Column(db.String(100), nullable=True) # 👈 השורה שהוספנו
+    first_name = db.Column(db.String(50), nullable=True) # 👈 הוחלף מ-full_name
+    last_name = db.Column(db.String(50), nullable=True)  # 👈 התווסף
 
 class DogProfile(db.Model):
     __tablename__ = 'dog_profiles'
@@ -102,7 +103,8 @@ def register():
     data = request.json
     email = data.get('email')
     password = data.get('password')
-    full_name = data.get('full_name') # 👈 משיכת שם הבעלים
+    first_name = data.get('first_name') # 👈 משיכת שם פרטי
+    last_name = data.get('last_name')   # 👈 משיכת שם משפחה
     dog_name = data.get('dog_name')   # 👈 משיכת שם הכלב
 
     if User.query.filter_by(email=email).first():
@@ -110,7 +112,7 @@ def register():
 
     hashed_pw = generate_password_hash(password)
     # שמירת המשתמש עם השם המלא
-    new_user = User(email=email, password_hash=hashed_pw, full_name=full_name)
+    new_user = User(email=email, password_hash=hashed_pw, first_name=first_name, last_name=last_name)
     db.session.add(new_user)
     db.session.commit()
 
@@ -144,11 +146,15 @@ def dog_profile():
     profile = DogProfile.query.filter_by(user_id=current_user_id).first()
     
     if request.method == 'GET':
-        user = User.query.filter_by(id=current_user_id).first() # 👈 שולפים את המשתמש
+        user = User.query.filter_by(id=current_user_id).first()
         if not profile:
-            return jsonify({"owner_name": user.full_name if user else ""}), 200
+            return jsonify({
+                "owner_first_name": user.first_name if user else "",
+                "owner_last_name": user.last_name if user else ""
+            }), 200
         return jsonify({
-            "owner_name": user.full_name if user else "", # 👈 מחזירים את שם הבעלים ל-Frontend
+            "owner_first_name": user.first_name if user else "",
+            "owner_last_name": user.last_name if user else "",
             "name": profile.name, "breed": profile.breed, "city": profile.city,
             "dob": profile.dob, "gender": profile.gender, "status": profile.status,
             "weight": profile.weight, "chip": profile.chip, "allergies": profile.allergies,

@@ -942,17 +942,6 @@ li {
     border-color: transparent !important;
 }
 
-/* נעילת העיגול של התמונה כשאנחנו רק בצפייה */
-.profile-pic-container.disabled {
-    cursor: default;
-    border-color: transparent;
-    pointer-events: none; /* הקסם: חוסם לחלוטין את לחיצת העכבר על התמונה */
-}
-
-/* העלמת הכיתוב "עדכן תמונה" במצב צפייה */
-.profile-pic-container.disabled .profile-pic-overlay {
-    display: none;
-}
 
 /* ==========================================
    עיצוב תפריט דיווחים מהירים
@@ -1243,4 +1232,69 @@ li {
     margin-bottom: 20px;
     text-shadow: 0 1px 4px rgba(0,0,0,0.5);
     animation: fadeIn 0.5s ease-in-out;
+}
+
+/* --- עדכון למצב הנעול: מאפשר לחיצה ומרחף --- */
+.profile-pic-container {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.profile-pic-container.disabled {
+    cursor: pointer; /* במקום not-allowed/default */
+    border-color: transparent;
+}
+
+.profile-pic-container.disabled:hover {
+    transform: scale(1.05); /* הגדלה קלה במעבר עכבר */
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* העלמת הכיתוב "עדכן תמונה" במצב צפייה */
+.profile-pic-container.disabled .profile-pic-overlay {
+    display: none;
+}
+
+/* --- עיצוב הגדלת התמונה (Lightbox) --- */
+.lightbox {
+    display: none; 
+    position: fixed; 
+    z-index: 2000; 
+    left: 0; 
+    top: 0; 
+    width: 100%; 
+    height: 100%; 
+    background-color: rgba(15, 23, 42, 0.9); 
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    justify-content: center; 
+    align-items: center; 
+}
+
+.lightbox-content {
+    max-width: 90%; 
+    max-height: 90%; 
+    border-radius: 16px; 
+    border: 3px solid rgba(255,255,255,0.2); 
+    box-shadow: 0 15px 40px rgba(0,0,0,0.6); 
+    animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+}
+
+.close-lightbox {
+    position: absolute; 
+    top: 25px; 
+    right: 35px; 
+    color: white; 
+    font-size: 45px; 
+    font-weight: bold; 
+    cursor: pointer; 
+    transition: color 0.2s;
+}
+
+.close-lightbox:hover {
+    color: #f43f5e;
+}
+
+@keyframes zoomIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
 }

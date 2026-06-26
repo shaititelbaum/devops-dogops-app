@@ -38,13 +38,18 @@
         <p class="subtitle">הצטרף לקהילת DogOps</p>
 
         <div class="input-subgroup full-width" style="margin-bottom: 15px;">
-                <label>שם מלא שלך:</label>
-                <input type="text" id="reg-fullname" placeholder="איך קוראים לך?">
+                <label>שם פרטי:</label>
+                <input type="text" id="reg-firstname" placeholder="למשל: שי">
+            </div>
+            <div class="input-subgroup full-width" style="margin-bottom: 15px;">
+                <label>שם משפחה:</label>
+                <input type="text" id="reg-lastname" placeholder="למשל: כהן">
             </div>
             <div class="input-subgroup full-width" style="margin-bottom: 15px;">
                 <label>שם הכלב:</label>
                 <input type="text" id="reg-dogname" placeholder="איך קוראים לכלב/ה?">
             </div>
+
         <div class="dog-details-card" style="margin: 0 auto; background: transparent; border: none; padding: 10px;">
             <div class="input-subgroup full-width" style="margin-bottom: 15px;">
                 <label>אימייל:</label>
@@ -75,9 +80,7 @@
             <span class="emoji-paw">🐾</span>
             DogOps Dashboard
         </h1>
-        <p class="subtitle">יומן מעקב התנהגות ואילוף בשטח</p>o
-
-        <div id="welcome-greeting" class="welcome-greeting" style="display: none;"></div>
+        <p class="subtitle">יומן מעקב התנהגות ואילוף בשטח</p>
 
         <div class="nav-menu">
             <button id="tab-dashboard" class="nav-item active" onclick="switchView('dashboard')">📋 לוח דיווח</button>
@@ -89,6 +92,8 @@
         </div>
         
         <div id="input-section">
+            <div id="welcome-greeting" class="welcome-greeting" style="display: none;"></div>
+            
             <div class="input-group">
                 <input type="text" id="todo-input" placeholder="מה הכלב עשה עכשיו? (למשל: משך ברצועה...)">
             </div>
@@ -145,7 +150,7 @@
         </div>
 
         <div id="mydog-section">
-            <div id="profile-pic-wrapper" class="profile-pic-container" onclick="document.getElementById('dog-pic-input').click()" title="לחץ להחלפת תמונה">
+            <div id="profile-pic-wrapper" class="profile-pic-container" onclick="handleProfilePicClick()" title="הצג/עדכן תמונה">
                 <img id="dog-profile-pic" src="" alt="">
                 <div id="dog-pic-placeholder" class="pic-placeholder">🐕</div>
                 <div class="profile-pic-overlay">📷 עדכן תמונה</div>
@@ -369,13 +374,15 @@
             const email = document.getElementById('reg-email').value;
             const password = document.getElementById('reg-password').value;
             const confirmPassword = document.getElementById('reg-password-confirm').value;
-            const fullName = document.getElementById('reg-fullname').value; // 👈 חדש
-            const dogName = document.getElementById('reg-dogname').value;   // 👈 חדש
+            const firstName = document.getElementById('reg-firstname').value.trim();
+            const lastName = document.getElementById('reg-lastname').value.trim();
+            const dogName = document.getElementById('reg-dogname').value.trim(); 
 
             if (!email.includes('@') || email.length < 5) return alert("נא להזין אימייל תקין.");
             if (password.length < 6) return alert("הסיסמה חייבת להכיל לפחות 6 תווים.");
             if (password !== confirmPassword) return alert("הסיסמאות לא תואמות!");
-            if (fullName.length < 2) return alert("נא להזין שם מלא.");        // 👈 חדש
+            if (firstName.length < 2) return alert("נא להזין שם פרטי תקין.");
+            if (lastName.length < 2) return alert("נא להזין שם משפחה תקין.");
             if (dogName.length < 2) return alert("נא להזין את שם הכלב.");      // 👈 חדש
 
             try {
@@ -383,7 +390,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     // 👈 חדש: מכניסים את הנתונים החדשים לבקשה
-                    body: JSON.stringify({ email, password, full_name: fullName, dog_name: dogName }) 
+                    body: JSON.stringify({ email, password, first_name: firstName, last_name: lastName, dog_name: dogName }) 
                 });
                 // ... המשך הפונקציה נשאר זהה ...
                 const data = await response.json();
@@ -910,6 +917,25 @@ async function addDogEvent(type) {
             }
         }
 
+        function handleProfilePicClick() {
+            const isEditing = !document.getElementById('dog-name').disabled;
+            const imgElement = document.getElementById('dog-profile-pic');
+
+            if (isEditing) {
+                // במצב עריכה - פותח בחירת קובץ
+                document.getElementById('dog-pic-input').click();
+            } else if (imgElement.src && imgElement.style.display !== 'none') {
+                // במצב צפייה - פותח את התמונה להגדלה
+                const lightbox = document.getElementById('image-lightbox');
+                document.getElementById('lightbox-img').src = imgElement.src;
+                lightbox.style.display = 'flex';
+            }
+        }
+
+        function closeLightbox() {
+            document.getElementById('image-lightbox').style.display = 'none';
+        }
+
         async function loadDogProfile() {
     try {
         const response = await fetch('/api/profile', { headers: getAuthHeaders() });
@@ -917,9 +943,14 @@ async function addDogEvent(type) {
             const profile = await response.json();
         
         // --- הדלקת כיתוב הברכה הדינאמי ---
-            if (profile.owner_name && profile.name) {
+            if (profile.owner_first_name && profile.name) {
+                const hour = new Date().getHours();
+                let timeGreeting = "ערב טוב";
+                if (hour >= 6 && hour < 12) timeGreeting = "בוקר טוב";
+                else if (hour >= 12 && hour < 18) timeGreeting = "צהריים טובים";
+
                 const greetingEl = document.getElementById('welcome-greeting');
-                greetingEl.innerText = `אהלן ${profile.owner_name}, ${profile.name} כבר מוכן לאימון! 🦴`;
+                greetingEl.innerText = `היי ${profile.owner_first_name} ו-${profile.name}, ${timeGreeting}, אילוף מוצלח! 🐾`;
                 greetingEl.style.display = 'block';
             }
             
@@ -1483,5 +1514,9 @@ async function addDogEvent(type) {
         window.addEventListener('resize', trackPawPosition);
 
     </script>
+<div id="image-lightbox" class="lightbox" onclick="closeLightbox()">
+        <span class="close-lightbox">&times;</span>
+        <img class="lightbox-content" id="lightbox-img">
+    </div>
 </body>
 </html>
