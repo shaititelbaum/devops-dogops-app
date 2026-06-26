@@ -32,7 +32,31 @@
                 </div>
             </div>
 
-    <div class="todo-container" id="register-container" style="display: none; max-width: 400px; justify-content: center;">
+    <div class="todo-container" id="login-container" style="max-width: 400px; justify-content: center;">
+        <h1><span class="emoji-paw">🐾</span> DogOps</h1>
+        <p class="subtitle">התחברות למערכת האילוף</p>
+
+        <div class="dog-details-card" style="margin: 0 auto; background: transparent; border: none; padding: 10px;">
+            <div class="input-subgroup full-width" style="margin-bottom: 15px;">
+                <label>אימייל:</label>
+                <div class="input-with-icon">
+                    <input type="email" id="login-email" placeholder="name@example.com" autocomplete="email" oninput="validateLoginFields()">
+                    <span id="login-email-icon" class="validation-icon"></span>
+                </div>
+            </div>
+            
+            <div class="input-subgroup full-width" style="margin-bottom: 25px;">
+                <label>סיסמה:</label>
+                <div class="input-with-icon">
+                    <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" oninput="validateLoginFields()">
+                    <span id="login-pass-icon" class="validation-icon"></span>
+                </div>
+            </div>
+            
+            <button class="btn-login" onclick="performLogin()" style="width: 100%; font-size: 18px; padding: 16px;">התחבר</button> 
+            <button class="btn-register" onclick="toggleForms()">אין עדיין חשבון? הירשם כאן</button>
+        </div>
+    </div> <div class="todo-container" id="register-container" style="display: none; max-width: 400px; justify-content: center;">
         <h1><span class="emoji-paw">🐾</span> הרשמה</h1>
         <p class="subtitle">הצטרף לקהילת DogOps</p>
 
@@ -92,6 +116,7 @@
             <button class="btn-login" onclick="performRegister()" style="width: 100%; font-size: 18px; padding: 16px;">צור חשבון</button> 
             <button class="btn-register" onclick="toggleForms()">כבר רשום? התחבר כאן</button>
         </div>
+    </div>
 
     </div><div class="todo-container" id="main-container" style="display: none;"> 
         <button class="btn-header-logout" onclick="performLogout()" title="התנתק">
