@@ -368,13 +368,15 @@
 
        // --- פונקציות התחברות אמיתיות מול השרת ---
         async function performLogin() {
-            const email = document.getElementById('login-email').value;
+            const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value;
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
-            if(email.length < 3 || password.length < 3) {
-                alert("אנא הזן אימייל וסיסמה חוקיים");
+            if(!emailRegex.test(email) || password.length < 6) {
+                alert("אנא הזן כתובת אימייל תקינה וסיסמה חוקית.");
                 return;
             }
+            // ... (מכאן ה-try catch מתחיל)
 
             try {
                 const response = await fetch('/api/login', {
@@ -410,7 +412,8 @@
             const lastName = document.getElementById('reg-lastname').value.trim();
             const dogName = document.getElementById('reg-dogname').value.trim(); 
 
-            if (!email.includes('@') || email.length < 5) return alert("נא להזין אימייל תקין.");
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if (!emailRegex.test(email)) return alert("נא להזין כתובת אימייל תקינה (לדוגמה: name@example.com).");
             if (!isEmailValidForReg) return alert("האימייל שגוי או שכבר קיים במערכת.");
 
             const nameRegex = /^[A-Za-zא-ת\s\'-]+$/;
@@ -465,12 +468,18 @@
                 return; 
             }
 
-            if(!val.includes('@') || !val.includes('.')) {
+            // 👇 בדיקת Regex מקצועית למבנה האימייל
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if(!emailRegex.test(val)) {
                 icon.innerText = '❌'; 
                 el.style.borderColor = '#f43f5e';
-                errMsg.style.display = 'none';
+                errMsg.style.display = 'none'; // מוסתר כי השגיאה היא בפורמט, לא בכפילות
                 return;
             }
+
+            icon.innerText = '⏳'; // מראה טעינה בזמן פנייה לשרת
+            clearTimeout(emailCheckTimeout);
+            // ... (מכאן הפונקציה ממשיכה אותו דבר עם ה-setTimeout)
 
             icon.innerText = '⏳'; // מראה טעינה בזמן פנייה לשרת
             clearTimeout(emailCheckTimeout);
@@ -501,11 +510,21 @@
         function validateLoginFields() {
             const emailEl = document.getElementById('login-email');
             const emailIcon = document.getElementById('login-email-icon');
-            if(emailEl.value.length === 0) { emailIcon.innerText = ''; emailEl.style.borderColor = 'rgba(255, 255, 255, 0.4)'; }
-            else if(emailEl.value.includes('@') && emailEl.value.includes('.')) { emailIcon.innerText = '✅'; emailEl.style.borderColor = '#10b981'; }
-            else { emailIcon.innerText = ''; emailEl.style.borderColor = '#f43f5e'; }
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            
+            if(emailEl.value.length === 0) { 
+                emailIcon.innerText = ''; 
+                emailEl.style.borderColor = 'rgba(255, 255, 255, 0.4)'; 
+            } else if(emailRegex.test(emailEl.value)) { 
+                emailIcon.innerText = '✅'; 
+                emailEl.style.borderColor = '#10b981'; 
+            } else { 
+                emailIcon.innerText = '❌'; 
+                emailEl.style.borderColor = '#f43f5e'; 
+            }
 
             const passEl = document.getElementById('login-password');
+            // ... (בדיקת הסיסמה ממשיכה אותו דבר)
             const passIcon = document.getElementById('login-pass-icon');
             if(passEl.value.length === 0) { passIcon.innerText = ''; passEl.style.borderColor = 'rgba(255, 255, 255, 0.4)'; }
             else if(passEl.value.length >= 6) { passIcon.innerText = '✅'; passEl.style.borderColor = '#10b981'; }
@@ -1138,7 +1157,7 @@ async function addDogEvent(type) {
                 else if (hour >= 12 && hour < 18) timeGreeting = "צהריים טובים";
 
                 const greetingEl = document.getElementById('welcome-greeting');
-                greetingEl.innerText = `היי ${profile.owner_first_name} ו${profile.name}, ${timeGreeting} ואילוף מוצלח  🐾`;
+                greetingEl.innerText = `היי ${profile.owner_first_name} ו${profile.name}, ${timeGreeting} ואילוף מוצלח   🐾`;
                 greetingEl.style.display = 'block';
             }
             
