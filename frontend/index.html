@@ -895,36 +895,44 @@ async function addDogEvent(type) {
         }
 
         async function loadDogProfile() {
-            try {
-                const response = await fetch('/api/profile', { headers: getAuthHeaders() });
-                if (response.ok) {
-                    const profile = await response.json();
-                    if (profile.name) {
-                        document.getElementById('dog-name').value = profile.name || '';
-                        document.getElementById('dog-breed').value = profile.breed || '';
-                        document.getElementById('dog-city').value = profile.city || '';
-                        document.getElementById('dog-dob').value = profile.dob || '';
-                        calculateDogAge();
-                        document.getElementById('dog-gender').value = profile.gender || 'זכר';
-                        document.getElementById('dog-status').value = profile.status || 'מסורס';
-                        document.getElementById('dog-weight').value = profile.weight || '';
-                        document.getElementById('dog-chip').value = profile.chip || '';
-                        document.getElementById('dog-allergies').value = profile.allergies || '';
-
-                        if (profile.image_url) {
-                            const imgElement = document.getElementById('dog-profile-pic');
-                            imgElement.src = profile.image_url;
-                            imgElement.style.display = 'block';
-                            document.getElementById('dog-pic-placeholder').style.display = 'none';
-                        }
-                        setProfileState(false);
-                        return;
-                    }
-                }
-            } catch (e) { console.error("Error loading profile", e); }
+    try {
+        const response = await fetch('/api/profile', { headers: getAuthHeaders() });
+        if (response.ok) {
+            const profile = await response.json();
             
-            setProfileState(true);
+            // קודם כל ולפני הכל: אם יש תמונה מהשרת, תציג אותה!
+            if (profile.image_url) {
+                const imgElement = document.getElementById('dog-profile-pic');
+                imgElement.src = profile.image_url;
+                imgElement.style.display = 'block';
+                document.getElementById('dog-pic-placeholder').style.display = 'none';
+            }
+
+            // עכשיו נבדוק אם יש שאר פרטים לפרופיל
+            if (Object.keys(profile).length > 0) {
+                document.getElementById('dog-name').value = profile.name || '';
+                document.getElementById('dog-breed').value = profile.breed || '';
+                document.getElementById('dog-city').value = profile.city || '';
+                document.getElementById('dog-dob').value = profile.dob || '';
+                calculateDogAge();
+                document.getElementById('dog-gender').value = profile.gender || 'זכר';
+                document.getElementById('dog-status').value = profile.status || 'מסורס';
+                document.getElementById('dog-weight').value = profile.weight || '';
+                document.getElementById('dog-chip').value = profile.chip || '';
+                document.getElementById('dog-allergies').value = profile.allergies || '';
+
+                // אם יש שם, נניח שהפרופיל מלא וננעל אותו לצפייה
+                if (profile.name) {
+                    setProfileState(false);
+                    return;
+                }
+            }
         }
+    } catch (e) { console.error("Error loading profile", e); }
+    
+    // אם אין פרופיל, נפתח את השדות לעריכה
+    setProfileState(true);
+}
 
         // ==========================================
         // לוגיקת דיווחים מהירים (Quick Events)
