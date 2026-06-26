@@ -125,6 +125,7 @@
         </div>
         
         <div id="input-section">
+            <div id="welcome-greeting" class="welcome-greeting" style="display: none;"></div>
             
             <div class="input-group">
                 <input type="text" id="todo-input" placeholder="מה הכלב עשה עכשיו? (למשל: משך ברצועה...)">
@@ -672,12 +673,8 @@
             const activeTab = document.getElementById(`tab-${viewName}`);
             if (activeTab) activeTab.classList.add('active');
 
-            // משחררים את הגובה כשהאנימציה מסתיימת (קצת אחרי 0.4s)
-            setTimeout(() => {
-                if (currentView === viewName) {
-                    container.style.height = 'auto';
-                }
-            }, 450);
+            // מנקים את גובה הקונטיינר כדי שיהיה גמיש
+            container.style.height = 'auto';
 
             if (viewName === 'history') fetchTodos();
             if (viewName === 'vaccines') fetchVaccines();
@@ -1164,6 +1161,7 @@ async function addDogEvent(type) {
         const response = await fetch('/api/profile', { headers: getAuthHeaders() });
         if (response.ok) {
             const profile = await response.json();
+            console.log("Profile Data:", profile); // 👈 תוסיף את זה
         
         // --- הדלקת כיתוב הברכה הדינאמי ---
             if (profile.owner_first_name && profile.name) {
