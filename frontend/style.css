@@ -29,17 +29,35 @@ body {
     width: 100%;
     max-width: 600px;
     border: 1px solid rgba(255, 255, 255, 0.3);
-    
-    /* התיקון הקריטי למרווחים: */
-    margin-top: 8vh; /* רווח בטוח ויפה מלמעלה */
-    margin-bottom: 5vh; /* רווח בטוח מהרצפה - לעולם לא ייגע למטה! */
-    
     min-height: 55vh;
-    max-height: 80vh; /* מונע מהקופסה לעבור את הגובה המותר */
-    
-    transition: max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1), height 0.4s cubic-bezier(0.4, 0, 0.2, 1), min-height 0.3s ease;
+    max-height: 80vh;
+    margin-top: 8vh; 
+    margin-bottom: 5vh; 
+    transition: max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1), min-height 0.3s ease;
     display: flex;
     flex-direction: column;
+
+}
+
+#settings-section {
+    animation: fadeInTab 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    width: 100%;
+}
+
+#settings-section::-webkit-scrollbar { width: 6px; }
+#settings-section::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); border-radius: 10px; }
+
+/* מרכוז יפה לכפתור שכחתי סיסמה */
+.btn-text-link {
+    background: transparent;
+    border: none;
+    color: #bae6fd;
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: underline;
+    display: inline-block;
+    padding: 0;
+    box-shadow: none;
 }
 
 /* החזרת ה-wide-mode שמרחיב את החלון בצורה חיה */
@@ -1420,24 +1438,4 @@ li {
 
 .req-item.valid {
     color: #6ee7b7;
-}
-
-.btn-text-link {
-    background: transparent;
-    border: none;
-    color: #bae6fd;
-    font-size: 13px;
-    cursor: pointer;
-    text-decoration: underline;
-    text-align: right;
-    display: block;
-    margin-top: -15px;
-    margin-bottom: 20px;
-    padding: 0;
-    width: auto;
-    box-shadow: none;
-}
-.btn-text-link:hover {
-    color: #ffffff;
-    transform: none;
 }
