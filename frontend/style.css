@@ -1205,6 +1205,49 @@ li {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
+/* כפתור הגדרות חדש בשמאל */
+.btn-header-settings {
+    position: absolute;
+    top: 12px;
+    left: 12px; /* 👈 תוקע אותו בשמאל */
+    background: rgba(255, 255, 255, 0.1); 
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #cbd5e1;
+    width: 30px;  
+    height: 30px; 
+    border-radius: 50%;
+    padding: 0;   
+    box-sizing: border-box; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 10; 
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.btn-header-settings:hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.4);
+    color: white;
+    transform: scale(1.1) rotate(90deg); /* 👈 אפקט סיבוב של גלגל שיניים */
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.settings-content input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    color: white;
+    outline: none;
+}
+.settings-content input:focus {
+    border-color: #3b82f6;
+}
+
 .btn-header-logout:hover {
     background: rgba(239, 68, 68, 0.2); /* הילה אדומה של יציאה */
     border-color: rgba(239, 68, 68, 0.4);

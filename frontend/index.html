@@ -141,6 +141,13 @@
             </svg>
         </button> 
 
+        <button class="btn-header-settings" onclick="openSettingsModal()" title="הגדרות חשבון">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+        </button>
+
         <h1>
             <span class="emoji-paw">🐾</span>
             DogOps Dashboard
@@ -289,23 +296,8 @@
                 </div>
             </div> 
 
-            </div> <div class="delete-account-wrapper" style="margin-top: 30px; width: 100%; max-width: 320px; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
-                <button id="btn-show-delete" class="cancel-btn" style="width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; background: rgba(239, 68, 68, 0.15);" onclick="toggleDeleteAccount()">⚠️ מחיקת חשבון לצמיתות</button>
-                
-                <div id="delete-account-confirm" class="hidden" style="margin-top: 15px; background: rgba(239, 68, 68, 0.1); padding: 15px; border-radius: 12px; border: 1px solid rgba(239, 68, 68, 0.4);">
-                    <p style="color: #fca5a5; font-size: 13px; margin-top: 0; margin-bottom: 10px;">הפעולה תמחק את כל הנתונים ללא אפשרות שחזור.<br>הכנס סיסמה לאישור:</p>
-                    <div class="input-with-icon" style="margin-bottom: 15px;">
-                        <input type="password" id="delete-account-password" placeholder="סיסמת החשבון..." style="background: rgba(0,0,0,0.5);">
-                    </div>
-                    <div style="display: flex; gap: 10px;">
-                        <button class="cancel-btn" onclick="performDeleteAccount()" style="flex: 1; background: #ef4444; color: white;">מחק עכשיו</button>
-                        <button class="save-btn" onclick="toggleDeleteAccount()" style="flex: 1; background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: white;">ביטול</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="history-section" style="display: none;">
+    </div>
+    <div id="history-section" style="display: none;">
             <div class="filter-group">
                 <button class="filter-btn active" id="filter-all" onclick="setFilter('all')">הכל</button>
                 <button class="filter-btn" id="filter-good" onclick="setFilter('good')">🟢 כלב טוב</button>
@@ -583,18 +575,57 @@
         let emailCheckTimeout = null;
         let isEmailValidForReg = false;
 
-        function toggleDeleteAccount() {
-            const confirmDiv = document.getElementById('delete-account-confirm');
-            const btnShow = document.getElementById('btn-show-delete');
+        function openSettingsModal() { document.getElementById('settings-modal').style.display = 'flex'; }
+        function closeSettingsModal() { document.getElementById('settings-modal').style.display = 'none'; }
+
+        async function performChangeEmail() {
+            const newEmail = document.getElementById('set-new-email').value;
+            const password = document.getElementById('set-email-pass').value;
+            if(!newEmail.includes('@') || !password) return alert("אנא מלא את כל השדות בצורה תקינה.");
             
-            if (confirmDiv.classList.contains('hidden')) {
-                confirmDiv.classList.remove('hidden');
-                btnShow.classList.add('hidden');
-                document.getElementById('delete-account-password').value = '';
-            } else {
-                confirmDiv.classList.add('hidden');
-                btnShow.classList.remove('hidden');
-            }
+            try {
+                const res = await fetch('/api/account/email', {
+                    method: 'PUT', headers: getAuthHeaders(),
+                    body: JSON.stringify({ new_email: newEmail, password })
+                });
+                const data = await res.json();
+                if(res.ok) { alert("✅ האימייל שונה בהצלחה!"); document.getElementById('set-new-email').value = ''; document.getElementById('set-email-pass').value = ''; }
+                else alert("❌ " + data.error);
+            } catch(e) { alert("שגיאת תקשורת."); }
+        }
+
+        async function performChangePassword() {
+            const currentPass = document.getElementById('set-current-pass').value;
+            const newPass = document.getElementById('set-new-pass').value;
+            if(!currentPass || newPass.length < 8) return alert("הסיסמה החדשה חייבת להכיל 8 תווים לפחות.");
+            
+            try {
+                const res = await fetch('/api/account/password', {
+                    method: 'PUT', headers: getAuthHeaders(),
+                    body: JSON.stringify({ current_password: currentPass, new_password: newPass })
+                });
+                const data = await res.json();
+                if(res.ok) { alert("✅ הסיסמה שונתה בהצלחה!"); document.getElementById('set-current-pass').value = ''; document.getElementById('set-new-pass').value = ''; }
+                else alert("❌ " + data.error);
+            } catch(e) { alert("שגיאת תקשורת."); }
+        }
+
+        async function performDeleteAccount() {
+            const password = document.getElementById('set-delete-pass').value;
+            if (!password) return alert("חובה להזין סיסמה לאישור המחיקה.");
+            if (!confirm("האם אתה בטוח במאה אחוז? כל הנתונים, ההיסטוריה והתמונות יימחקו לתמיד.")) return;
+
+            try {
+                const response = await fetch('/api/account', {
+                    method: 'DELETE', headers: getAuthHeaders(),
+                    body: JSON.stringify({ password })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    alert("✅ החשבון נמחק לצמיתות.\nתודה שהשתמשת ב-DogOps!");
+                    performLogout(); 
+                } else alert("❌ " + data.error);
+            } catch (e) { alert("שגיאת תקשורת עם השרת."); }
         }
 
         async function performDeleteAccount() {
@@ -1902,6 +1933,35 @@ async function addDogEvent(type) {
         window.addEventListener('resize', trackPawPosition);
 
     </script>
+
+<div id="settings-modal" class="lightbox" style="display: none;">
+        <div class="lightbox-content settings-content" style="background: rgba(15, 23, 42, 0.95); padding: 25px; width: 350px; text-align: right; max-height: 85vh; overflow-y: auto;">
+            <span class="close-lightbox" onclick="closeSettingsModal()" style="top: 15px; right: 20px; font-size: 30px;">&times;</span>
+            <h2 style="color: white; margin-top: 0; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">⚙️ הגדרות חשבון</h2>
+            
+            <div class="input-subgroup full-width" style="margin-bottom: 15px;">
+                <label>📧 החלפת אימייל</label>
+                <input type="email" id="set-new-email" placeholder="אימייל חדש..." style="background: rgba(0,0,0,0.5); margin-bottom: 5px;">
+                <input type="password" id="set-email-pass" placeholder="סיסמה לאישור..." style="background: rgba(0,0,0,0.5);">
+                <button class="save-btn" onclick="performChangeEmail()" style="width: 100%; margin-top: 8px;">עדכן אימייל</button>
+            </div>
+
+            <div class="input-subgroup full-width" style="margin-bottom: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                <label>🔑 החלפת סיסמה</label>
+                <input type="password" id="set-current-pass" placeholder="סיסמה נוכחית..." style="background: rgba(0,0,0,0.5); margin-bottom: 5px;">
+                <input type="password" id="set-new-pass" placeholder="סיסמה חדשה..." style="background: rgba(0,0,0,0.5);">
+                <div style="font-size: 10px; color: #cbd5e1; margin-top: 5px;">חובה: אות גדולה, קטנה, מספר, ותו מיוחד.</div>
+                <button class="save-btn" onclick="performChangePassword()" style="width: 100%; margin-top: 8px;">עדכן סיסמה</button>
+            </div>
+
+            <div class="input-subgroup full-width" style="margin-bottom: 5px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                <label style="color: #fca5a5;">⚠️ מחיקת חשבון לצמיתות</label>
+                <input type="password" id="set-delete-pass" placeholder="סיסמה לאישור מחיקה..." style="background: rgba(239,68,68,0.1); margin-bottom: 5px; border-color: rgba(239,68,68,0.3);">
+                <button class="cancel-btn" onclick="performDeleteAccount()" style="width: 100%; margin-top: 8px; background: #ef4444; color: white;">מחק את החשבון שלי</button>
+            </div>
+        </div>
+    </div>
+
 <div id="image-lightbox" class="lightbox" onclick="closeLightbox()">
         <span class="close-lightbox">&times;</span>
         <img class="lightbox-content" id="lightbox-img">
