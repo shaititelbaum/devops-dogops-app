@@ -1421,6 +1421,8 @@ li {
 
 #reg-password:focus ~ .password-reqs, 
 #reg-password:hover ~ .password-reqs,
+#set-new-pass:focus ~ .password-reqs, 
+#set-new-pass:hover ~ .password-reqs,
 .password-reqs:hover {
     display: block;
 }
