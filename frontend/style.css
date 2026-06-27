@@ -1378,3 +1378,23 @@ li {
 .req-item.valid {
     color: #6ee7b7;
 }
+
+.btn-text-link {
+    background: transparent;
+    border: none;
+    color: #bae6fd;
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: underline;
+    text-align: right;
+    display: block;
+    margin-top: -15px;
+    margin-bottom: 20px;
+    padding: 0;
+    width: auto;
+    box-shadow: none;
+}
+.btn-text-link:hover {
+    color: #ffffff;
+    transform: none;
+}
