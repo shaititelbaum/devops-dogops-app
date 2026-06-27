@@ -1,9 +1,14 @@
 import os
 import google.generativeai as genai
 from flask import Flask, jsonify, request
-from datetime import datetime
 import boto3
 import uuid
+import random
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from datetime import datetime, timedelta
+
 
 # ייבוא ספריות ה-DB והאבטחה
 from flask_sqlalchemy import SQLAlchemy
@@ -32,8 +37,18 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
-    first_name = db.Column(db.String(50), nullable=True) # 👈 הוחלף מ-full_name
-    last_name = db.Column(db.String(50), nullable=True)  # 👈 התווסף
+    first_name = db.Column(db.String(50), nullable=True) 
+    last_name = db.Column(db.String(50), nullable=True)  
+    reset_code = db.Column(db.String(10), nullable=True)
+    reset_code_expiry = db.Column(db.DateTime, nullable=True)
+    last_password_change = db.Column(db.DateTime, default=datetime.utcnow) # מתי שונתה סיסמה אחרונה
+
+class PasswordHistory(db.Model):
+    __tablename__ = 'password_history'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class DogProfile(db.Model):
     __tablename__ = 'dog_profiles'
@@ -81,6 +96,34 @@ class Summary(db.Model):
 with app.app_context():
     db.create_all()
 
+def send_real_email(to_email, subject, body):
+    # משתני סביבה שנספק דרך קוברנטיס בהמשך
+    smtp_server = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
+    smtp_port = int(os.getenv('SMTP_PORT', 587))
+    smtp_user = os.getenv('SMTP_USERNAME') # האימייל השולח (למשל dogops.system@gmail.com)
+    smtp_pass = os.getenv('SMTP_PASSWORD') # סיסמת אפליקציה של גוגל
+
+    if not smtp_user or not smtp_pass:
+        print("אזהרה: פרטי SMTP לא מוגדרים. המייל לא יישלח בפועל.")
+        return False
+
+    msg = MIMEMultipart()
+    msg['From'] = smtp_user
+    msg['To'] = to_email
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'plain', 'utf-8'))
+
+    try:
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(smtp_user, smtp_pass)
+        server.send_message(msg)
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+        return False
+
 # --- הגדרת Gemini AI ---
 api_key = os.getenv("GOOGLE_API_KEY")
 if api_key:
@@ -127,12 +170,19 @@ def register():
     new_user = User(email=email, password_hash=hashed_pw, first_name=first_name, last_name=last_name)
     db.session.add(new_user)
     db.session.commit()
+    # שמירת הסיסמה הראשונה בהיסטוריה
+    history = PasswordHistory(user_id=new_user.id, password_hash=hashed_pw)
+    db.session.add(history)
+    db.session.commit()
 
     # 👈 חדש: יוצרים לכלב פרופיל ראשוני מיד בסיום ההרשמה!
     if dog_name:
         new_dog = DogProfile(user_id=new_user.id, name=dog_name)
         db.session.add(new_dog)
         db.session.commit()
+    # שליחת אימייל הרשמה
+    body = f"אהלן {first_name} ו-{dog_name}!\n\nברוכים הבאים ל-DogOps, מערכת האילוף והמעקב המובילה בענן.\nשמחים שהצטרפתם לקהילה שלנו!\n\nבהצלחה באילוף,\nצוות DogOps 🐾"
+    send_real_email(email, "ברוכים הבאים ל-DogOps! 🐾", body)
 
     return jsonify({"message": "המשתמש נוצר בהצלחה!"}), 201
 
@@ -144,9 +194,107 @@ def login():
     if not user or not check_password_hash(user.password_hash, data.get('password')):
         return jsonify({"error": "אימייל או סיסמה שגויים"}), 401
 
+    # חסימת 90 יום!
+    if user.last_password_change and (datetime.utcnow() - user.last_password_change).days >= 90:
+        return jsonify({"error": "פג תוקפה של הסיסמה (עברו 90 ימים). חובה עליך לאפס את הסיסמה כעת.", "requires_reset": True}), 403
+
     # יצירת טוקן שמכיל את ה-ID של המשתמש
     access_token = create_access_token(identity=str(user.id))
     return jsonify({"access_token": access_token}), 200
+
+@app.route('/api/forgot-password', methods=['POST'])
+def forgot_password():
+    email = request.json.get('email')
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"error": "לא נמצא משתמש עם האימייל הזה"}), 404
+    
+    code = str(random.randint(100000, 999999))
+    user.reset_code = code
+    user.reset_code_expiry = datetime.utcnow() + timedelta(minutes=15) # תוקף של 15 דקות
+    db.session.commit()
+    
+    body = f"שלום,\n\nהתקבלה בקשה לאיפוס סיסמה בחשבון ה-DogOps שלך.\nקוד האימות שלך הוא: {code}\n\nהקוד תקף ל-15 דקות.\nאם לא אתה ביקשת לאפס את הסיסמה, אנא התעלם מהודעה זו."
+    
+    success = send_real_email(user.email, "DogOps - קוד לאיפוס סיסמה", body)
+    if not success:
+        return jsonify({"error": "שגיאה בשליחת האימייל. בדוק אם השרת מוגדר כראוי."}), 500
+
+    return jsonify({"message": "Code generated and emailed"}), 200
+
+@app.route('/api/reset-password', methods=['POST'])
+def reset_password():
+    data = request.json
+    user = User.query.filter_by(email=data.get('email')).first()
+    
+    if not user or user.reset_code != data.get('code'):
+        return jsonify({"error": "קוד איפוס שגוי"}), 400
+        
+    if user.reset_code_expiry and datetime.utcnow() > user.reset_code_expiry:
+        return jsonify({"error": "קוד האיפוס פג תוקף (עברו 15 דקות). בקש קוד חדש."}), 400
+
+    new_password = data.get('new_password')
+    
+    # מניעת שימוש ב-3 סיסמאות אחרונות
+    history_records = PasswordHistory.query.filter_by(user_id=user.id).order_by(PasswordHistory.created_at.desc()).limit(3).all()
+    for record in history_records:
+        if check_password_hash(record.password_hash, new_password):
+            return jsonify({"error": "מטעמי אבטחה, לא ניתן להשתמש באחת מ-3 הסיסמאות האחרונות שלך."}), 400
+
+    new_hash = generate_password_hash(new_password)
+    user.password_hash = new_hash
+    user.reset_code = None
+    user.reset_code_expiry = None
+    user.last_password_change = datetime.utcnow() # איפוס הטיימר של ה-90 יום!
+    
+    new_history = PasswordHistory(user_id=user.id, password_hash=new_hash)
+    db.session.add(new_history)
+    db.session.commit()
+
+    return jsonify({"message": "הסיסמה שונתה בהצלחה"}), 200
+
+# ==========================================
+# Routes: Account Management
+# ==========================================
+@app.route('/api/account', methods=['DELETE'])
+@jwt_required()
+def delete_account():
+    current_user_id = get_jwt_identity()
+    data = request.json
+    password = data.get('password')
+    user = User.query.get(current_user_id)
+
+    if not user or not check_password_hash(user.password_hash, password):
+        return jsonify({"error": "סיסמה שגויה. לא ניתן למחוק את החשבון."}), 403
+
+    email_to_send = user.email
+    first_name = user.first_name or ""
+
+    # מחיקת התמונה מ-S3 (אם קיימת)
+    prefix = f"user_{current_user_id}_profile"
+    try:
+        response_list = s3_client.list_objects_v2(Bucket=S3_BUCKET, Prefix=prefix)
+        if 'Contents' in response_list:
+            objects_to_delete = [{'Key': obj['Key']} for obj in response_list['Contents']]
+            s3_client.delete_objects(Bucket=S3_BUCKET, Delete={'Objects': objects_to_delete})
+    except Exception as e:
+        pass # ממשיכים במחיקה גם אם יש שגיאה מול אמזון
+
+    # מחיקת כל המידע מהטבלאות (Cascade ידני כי לא הגדרנו Relationship cascade)
+    Todo.query.filter_by(user_id=current_user_id).delete()
+    Vaccine.query.filter_by(user_id=current_user_id).delete()
+    Summary.query.filter_by(user_id=current_user_id).delete()
+    DogProfile.query.filter_by(user_id=current_user_id).delete()
+    PasswordHistory.query.filter_by(user_id=current_user_id).delete()
+
+    db.session.delete(user)
+    db.session.commit()
+
+    # שליחת אימייל פרידה
+    body = f"שלום {first_name},\n\nחשבונך במערכת DogOps וכל המידע המקושר אליו נמחקו בהצלחה לבקשתך.\nנשמח לראותך שוב בעתיד!\n\nצוות DogOps 🐾"
+    send_real_email(email_to_send, "DogOps - אישור מחיקת חשבון", body)
+
+    return jsonify({"message": "החשבון נמחק לצמיתות"}), 200
 
 # ==========================================
 # Routes: Dog Profile & S3 Image Upload

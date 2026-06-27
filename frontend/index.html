@@ -33,6 +33,7 @@
             </div>
             
             <button class="btn-login" onclick="performLogin()" style="width: 100%; font-size: 18px; padding: 16px;">התחבר</button> 
+            <button class="btn-text-link" onclick="showForgotPassword()">שכחת סיסמה?</button>
             <button class="btn-register" onclick="toggleForms()">אין עדיין חשבון? הירשם כאן</button>
         </div>
     </div>
@@ -96,6 +97,39 @@
             
             <button class="btn-login" onclick="performRegister()" style="width: 100%; font-size: 18px; padding: 16px;">צור חשבון</button> 
             <button class="btn-register" onclick="toggleForms()">כבר רשום? התחבר כאן</button>
+        </div>
+    </div>
+
+    <div class="todo-container" id="forgot-password-container" style="display: none; max-width: 400px; justify-content: center;">
+        <h1><span class="emoji-paw">🐾</span> שחזור סיסמה</h1>
+        <p class="subtitle" id="forgot-subtitle">הזן אימייל לקבלת קוד איפוס</p>
+
+        <div class="dog-details-card" style="margin: 0 auto; background: transparent; border: none; padding: 10px;">
+            <div id="forgot-step-1">
+                <div class="input-subgroup full-width" style="margin-bottom: 15px;">
+                    <label>אימייל:</label>
+                    <input type="email" id="forgot-email" placeholder="name@example.com">
+                </div>
+                <button class="btn-login" onclick="sendResetCode()" style="width: 100%; font-size: 18px; padding: 16px;">שלח קוד איפוס</button>
+                <button class="btn-register" onclick="backToLoginFromForgot()">חזור להתחברות</button>
+            </div>
+
+            <div id="forgot-step-2" style="display: none;">
+                <div class="input-subgroup full-width" style="margin-bottom: 15px;">
+                    <label>קוד איפוס (6 ספרות):</label>
+                    <input type="text" id="reset-code" placeholder="123456" style="letter-spacing: 5px; font-weight: bold; text-align: center;">
+                </div>
+                <div class="input-subgroup full-width" style="margin-bottom: 15px;">
+                    <label>סיסמה חדשה:</label>
+                    <div class="input-with-icon">
+                        <input type="password" id="reset-new-password" placeholder="••••••••" oninput="validateResetPassword()">
+                        <span id="reset-pass-icon" class="validation-icon"></span>
+                    </div>
+                    <div style="font-size: 11px; color: #cbd5e1; margin-top: 5px;">חובה לכלול: אותיות קטנות וגדולות, מספר, ותו מיוחד.</div>
+                </div>
+                <button class="btn-login" onclick="performResetPassword()" style="width: 100%; font-size: 18px; padding: 16px;">אפס סיסמה</button>
+                <button class="btn-register" onclick="backToLoginFromForgot()">ביטול</button>
+            </div>
         </div>
     </div>
 
@@ -254,6 +288,21 @@
                     <button id="btn-save-profile" class="btn-save-profile" onclick="saveDogProfile()">💾 שמור פרטים</button>
                 </div>
             </div> 
+
+            </div> <div class="delete-account-wrapper" style="margin-top: 30px; width: 100%; max-width: 320px; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+                <button id="btn-show-delete" class="cancel-btn" style="width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; background: rgba(239, 68, 68, 0.15);" onclick="toggleDeleteAccount()">⚠️ מחיקת חשבון לצמיתות</button>
+                
+                <div id="delete-account-confirm" class="hidden" style="margin-top: 15px; background: rgba(239, 68, 68, 0.1); padding: 15px; border-radius: 12px; border: 1px solid rgba(239, 68, 68, 0.4);">
+                    <p style="color: #fca5a5; font-size: 13px; margin-top: 0; margin-bottom: 10px;">הפעולה תמחק את כל הנתונים ללא אפשרות שחזור.<br>הכנס סיסמה לאישור:</p>
+                    <div class="input-with-icon" style="margin-bottom: 15px;">
+                        <input type="password" id="delete-account-password" placeholder="סיסמת החשבון..." style="background: rgba(0,0,0,0.5);">
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="cancel-btn" onclick="performDeleteAccount()" style="flex: 1; background: #ef4444; color: white;">מחק עכשיו</button>
+                        <button class="save-btn" onclick="toggleDeleteAccount()" style="flex: 1; background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: white;">ביטול</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div id="history-section" style="display: none;">
@@ -391,17 +440,97 @@
                     localStorage.setItem('dogOpsToken', data.access_token);
                     document.getElementById('login-container').style.display = 'none';
                     document.getElementById('main-container').style.display = 'flex';
-                    document.getElementById('logout-btn').style.display = 'block';
-                    trackPawPosition();
-                    loadDogProfile();
-                    initQuickEvents(); 
-                    initAiQuickPrompts();
-                    fetchTodos();
+                    // ...
+                } else if (data.requires_reset) {
+                    // 👈 חסימת 90 יום!
+                    alert("🚨 " + data.error);
+                    document.getElementById('forgot-email').value = email;
+                    showForgotPassword();
                 } else {
                     alert("שגיאה בהתחברות: " + (data.error || "נסה שוב"));
                 }
             } catch (e) {
                 alert("שגיאת תקשורת מול השרת");
+            }
+        }
+
+        // --- פונקציות איפוס סיסמה אמיתיות ---
+        function showForgotPassword() {
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('forgot-password-container').style.display = 'flex';
+            document.getElementById('forgot-step-1').style.display = 'block';
+            document.getElementById('forgot-step-2').style.display = 'none';
+        }
+
+        function backToLoginFromForgot() {
+            document.getElementById('forgot-password-container').style.display = 'none';
+            document.getElementById('login-container').style.display = 'flex';
+        }
+
+        function validateResetPassword() {
+            const pass = document.getElementById('reset-new-password').value;
+            const icon = document.getElementById('reset-pass-icon');
+            const passValid = pass.length >= 8 && /[A-Z]/.test(pass) && /[a-z]/.test(pass) && /[0-9]/.test(pass) && /[!@#$%^&*]/.test(pass);
+            icon.innerText = passValid ? '✅' : (pass.length > 0 ? '❌' : '');
+        }
+
+        async function sendResetCode() {
+            const email = document.getElementById('forgot-email').value.trim();
+            if (!email.includes('@')) return alert("הזן אימייל תקין");
+
+            const btn = event.target;
+            btn.innerText = "שולח אימייל... ⏳";
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert("✅ קוד אימות נשלח לאימייל שלך!");
+                    document.getElementById('forgot-step-1').style.display = 'none';
+                    document.getElementById('forgot-step-2').style.display = 'block';
+                    document.getElementById('forgot-subtitle').innerText = "הזן את הקוד שקיבלת במייל";
+                } else {
+                    alert(data.error);
+                }
+            } catch (e) {
+                alert("שגיאת תקשורת");
+            } finally {
+                btn.innerText = "שלח קוד איפוס";
+                btn.disabled = false;
+            }
+        }
+
+        async function performResetPassword() {
+            const email = document.getElementById('forgot-email').value.trim();
+            const code = document.getElementById('reset-code').value.trim();
+            const newPassword = document.getElementById('reset-new-password').value;
+
+            const passValid = newPassword.length >= 8 && /[A-Z]/.test(newPassword) && /[a-z]/.test(newPassword) && /[0-9]/.test(newPassword) && /[!@#$%^&*]/.test(newPassword);
+            if (!passValid) return alert("הסיסמה החדשה לא עומדת בדרישות האבטחה.");
+
+            try {
+                const response = await fetch('/api/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, code, new_password: newPassword })
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert("✅ הסיסמה שונתה בהצלחה! אפשר להתחבר כעת.");
+                    document.getElementById('login-password').value = "";
+                    backToLoginFromForgot();
+                } else {
+                    alert("❌ " + data.error);
+                }
+            } catch (e) {
+                alert("שגיאת תקשורת");
             }
         }
 
@@ -453,6 +582,45 @@
 
         let emailCheckTimeout = null;
         let isEmailValidForReg = false;
+
+        function toggleDeleteAccount() {
+            const confirmDiv = document.getElementById('delete-account-confirm');
+            const btnShow = document.getElementById('btn-show-delete');
+            
+            if (confirmDiv.classList.contains('hidden')) {
+                confirmDiv.classList.remove('hidden');
+                btnShow.classList.add('hidden');
+                document.getElementById('delete-account-password').value = '';
+            } else {
+                confirmDiv.classList.add('hidden');
+                btnShow.classList.remove('hidden');
+            }
+        }
+
+        async function performDeleteAccount() {
+            const password = document.getElementById('delete-account-password').value;
+            if (!password) return alert("חובה להזין סיסמה לאישור המחיקה.");
+
+            if (!confirm("האם אתה בטוח במאה אחוז? כל הנתונים, ההיסטוריה והתמונות יימחקו לתמיד.")) return;
+
+            try {
+                const response = await fetch('/api/account', {
+                    method: 'DELETE',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ password })
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert("✅ החשבון נמחק לצמיתות. נשלח אימייל אישור.\nתודה שהשתמשת ב-DogOps!");
+                    performLogout(); // מנתק ומרענן
+                } else {
+                    alert("❌ " + data.error);
+                }
+            } catch (e) {
+                alert("שגיאת תקשורת עם השרת.");
+            }
+        }
 
         async function validateRegEmail() {
             const el = document.getElementById('reg-email');
@@ -631,13 +799,12 @@
             currentView = viewName;
             const container = document.getElementById('main-container');
 
-            // --- 1. מדידה סופר-מדויקת (ללא אנימציה) ---
-            const startHeight = container.offsetHeight;
-            const wasWide = container.classList.contains('wide-mode');
-            
-            // מכבים את האנימציות לשבריר שנייה כדי למדוד את העתיד
+            // 1. מדידת גובה נוכחי ונעילת גלילה למניעת קפיצות
+            const startHeight = container.getBoundingClientRect().height;
             container.style.transition = 'none'; 
+            container.style.overflow = 'hidden'; 
             
+            // 2. החלפת התוכן והרוחב (ללא אנימציה בינתיים)
             if (viewName === 'dashboard') container.classList.remove('wide-mode');
             else container.classList.add('wide-mode');
 
@@ -652,29 +819,29 @@
                 }
             }); 
             
+            // 3. מדידת הגובה הסופי המדויק
             container.style.height = 'auto'; 
-            const endHeight = container.offsetHeight; // הגובה האמיתי הסופי!
+            const endHeight = container.getBoundingClientRect().height; 
 
-            // --- 2. מחזירים את המצב אחורה ומתחילים אנימציה נקייה ---
-            if (wasWide) container.classList.add('wide-mode');
-            else container.classList.remove('wide-mode');
-            
+            // 4. חזרה למצב ההתחלתי והחלת ה-Reflow
             container.style.height = startHeight + 'px';
-            container.offsetHeight; // Reflow כפוי לדפדפן
+            void container.offsetHeight; // הפקודה הקריטית לכפיית הציור מחדש
 
-            container.style.transition = ''; // מדליקים אנימציה
-            
-            // תנועה חלקה יחד של גובה ורוחב למצב הסופי 
-            if (viewName === 'dashboard') container.classList.remove('wide-mode');
-            else container.classList.add('wide-mode');
+            // 5. הפעלת האנימציה הסופית ברוחב ובגובה
+            container.style.transition = ''; // מחזיר ל-CSS המקורי
             container.style.height = endHeight + 'px';
 
             document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
             const activeTab = document.getElementById(`tab-${viewName}`);
             if (activeTab) activeTab.classList.add('active');
 
-            // מנקים את גובה הקונטיינר כדי שיהיה גמיש
-            container.style.height = 'auto';
+            // 6. ניקוי ופתיחת הקונטיינר לגובה אוטומטי בסוף האנימציה (400ms)
+            setTimeout(() => {
+                if (currentView === viewName) {
+                    container.style.height = 'auto';
+                    container.style.overflow = '';
+                }
+            }, 400);
 
             if (viewName === 'history') fetchTodos();
             if (viewName === 'vaccines') fetchVaccines();
