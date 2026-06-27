@@ -256,6 +256,53 @@ def reset_password():
 # ==========================================
 # Routes: Account Management
 # ==========================================
+
+@app.route('/api/account/email', methods=['PUT'])
+@jwt_required()
+def change_email():
+    current_user_id = get_jwt_identity()
+    data = request.json
+    user = User.query.get(current_user_id)
+    
+    if not check_password_hash(user.password_hash, data.get('password')):
+        return jsonify({"error": "סיסמה שגויה. פעולה בוטלה."}), 403
+        
+    new_email = data.get('new_email')
+    if User.query.filter_by(email=new_email).first():
+        return jsonify({"error": "האימייל כבר קיים במערכת."}), 400
+        
+    user.email = new_email
+    db.session.commit()
+    return jsonify({"message": "האימייל עודכן בהצלחה."}), 200
+
+@app.route('/api/account/password', methods=['PUT'])
+@jwt_required()
+def change_password():
+    current_user_id = get_jwt_identity()
+    data = request.json
+    user = User.query.get(current_user_id)
+    
+    if not check_password_hash(user.password_hash, data.get('current_password')):
+        return jsonify({"error": "סיסמה נוכחית שגויה."}), 403
+        
+    new_password = data.get('new_password')
+    
+    # בדיקת היסטוריית סיסמאות
+    history_records = PasswordHistory.query.filter_by(user_id=user.id).order_by(PasswordHistory.created_at.desc()).limit(3).all()
+    for record in history_records:
+        if check_password_hash(record.password_hash, new_password):
+            return jsonify({"error": "לא ניתן למחזר את 3 הסיסמאות האחרונות."}), 400
+            
+    new_hash = generate_password_hash(new_password)
+    user.password_hash = new_hash
+    user.last_password_change = datetime.utcnow()
+    
+    new_history = PasswordHistory(user_id=user.id, password_hash=new_hash)
+    db.session.add(new_history)
+    db.session.commit()
+    
+    return jsonify({"message": "הסיסמה עודכנה בהצלחה."}), 200
+
 @app.route('/api/account', methods=['DELETE'])
 @jwt_required()
 def delete_account():
