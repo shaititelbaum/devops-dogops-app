@@ -152,14 +152,10 @@
             </svg>
         </button>
 
-        <h1>
-            <span class="emoji-paw">🐾</span>
-            DogOps Dashboard
-        <h1>
-            <span class="emoji-paw">🐾</span>
-            DogOps Dashboard
-        </h1>
+        <h1><span class="emoji-paw">🐾</span> DogOps Dashboard</h1>
         <p class="subtitle">יומן מעקב התנהגות ואילוף בשטח</p>
+
+        <div id="welcome-greeting" class="welcome-greeting" style="display: none;"></div>
 
         <div class="nav-menu">
             <button id="tab-dashboard" class="nav-item active" onclick="switchView('dashboard')">📋 לוח דיווח</button>
@@ -171,9 +167,9 @@
         </div>
         
         <div id="input-section">
-            <div id="welcome-greeting" class="welcome-greeting" style="display: none;"></div>
-
             <div class="input-group">
+                <input type="text" id="todo-input" placeholder="מה הכלב עשה עכשיו? (למשל: משך ברצועה...)">
+            </div>
 
             <div class="quick-actions-wrapper">
                 <select id="quick-events-select" onchange="handleQuickEventSelect()">
