@@ -84,12 +84,12 @@ spec:
             {{- with .Values.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
-            # הזרקת הסיסמה מתוך הסוד הייעודי של האפליקציה (ולא מה-DB!)
+            # הזרקת הסיסמה מתוך הסוד של ה-ESO
             - name: SMTP_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "devops-dogops-backend-chart.fullname" . }}
-                  key: smtp-password
+                  name: smtp-credentials
+                  key: password
           # ----------------------------------------------------------------------------------
 
           {{- with .Values.livenessProbe }}
