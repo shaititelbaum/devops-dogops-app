@@ -84,12 +84,11 @@ spec:
             {{- with .Values.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
-            # הזרקת הסיסמה מתוך הסוד הקיים של האפליקציה (כמו ה-DB)
+            # הזרקת הסיסמה מתוך הסוד הייעודי של האפליקציה (ולא מה-DB!)
             - name: SMTP_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  # 👇 כאן תיקנו את השם של ה-Template
-                  name: {{ .Values.existingSecretName | default (include "devops-dogops-backend-chart.fullname" .) }}
+                  name: {{ include "devops-dogops-backend-chart.fullname" . }}
                   key: smtp-password
           # ----------------------------------------------------------------------------------
 
