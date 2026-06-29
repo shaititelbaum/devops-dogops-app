@@ -84,12 +84,17 @@ spec:
             {{- with .Values.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
-            # הזרקת הסיסמה מתוך הסוד של ה-ESO
+            # הזרקת פרטי ה-SMTP המלאים מתוך הסוד של ה-ESO
+            - name: SMTP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: smtp-credentials
+                  key: SMTP_USERNAME
             - name: SMTP_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: smtp-credentials
-                  key: password
+                  key: SMTP_PASSWORD
           # ----------------------------------------------------------------------------------
 
           {{- with .Values.livenessProbe }}
