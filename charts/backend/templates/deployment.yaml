@@ -88,7 +88,8 @@ spec:
             - name: SMTP_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.existingSecretName | default (include "backend.fullname" .) }}
+                  # 👇 כאן תיקנו את השם של ה-Template
+                  name: {{ .Values.existingSecretName | default (include "devops-dogops-backend-chart.fullname" .) }}
                   key: smtp-password
           # ----------------------------------------------------------------------------------
 
