@@ -61,7 +61,10 @@ spec:
                   name: {{ .Values.existingSecretName | default "db-credentials" }}
                   key: password
             - name: DB_HOST
-              value: {{ printf "dogops-postgres-%s" .Release.Namespace }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.existingSecretName | default "db-credentials" }}
+                  key: host
             - name: DB_NAME
               value: {{ .Values.databaseName | default "dogopsdb" | quote }}
             - name: DATABASE_URL
