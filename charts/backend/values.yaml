@@ -73,3 +73,6 @@ serviceMonitor:
   enabled: true
   path: /metrics
   interval: 15s
+
+# SSO Configuration
+googleClientId: ""

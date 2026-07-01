@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <title>DogOps - עתיד האילוף </title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -32,14 +33,43 @@
                     <span id="login-pass-icon" class="validation-icon"></span>
                 </div>
             </div>
-            
-            <button class="btn-login" onclick="performLogin()" style="width: 100%; font-size: 18px; padding: 16px;">התחבר</button> 
-            <div style="text-align: center; margin-top: 15px;">
-                <button class="btn-text-link" onclick="showForgotPassword()">שכחתי סיסמה</button>
+
+            <div id="g_id_onload"
+                 data-client_id="704471023932-54jgfkg894gq0ka082c0uhrvempts6c6.apps.googleusercontent.com"
+                 data-callback="handleGoogleLogin">
             </div>
-            <button class="btn-register" onclick="toggleForms()">אין עדיין חשבון? הירשם כאן</button>
+            <div class="g_id_signin" data-type="standard" data-theme="outline" data-size="large" style="margin-top: 15px; display: flex; justify-content: center;"></div>
+
+            <script>
+            function handleGoogleLogin(response) {
+                // שליחת הטוקן שגוגל הנפיקה ל-Backend שלנו
+                fetch('/api/auth/google', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: response.credential })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.access_token) {
+                        // שמירת הטוקן שלנו והעברת המשתמש פנימה!
+                        localStorage.setItem('token', data.access_token);
+                        alert("התחברת בהצלחה עם Google!");
+                        // כאן תוסיף את הקריאה להעלמת טופס ההתחברות והצגת האפליקציה
+                    } else {
+                        alert('שגיאה באימות מול השרת');
+                    }
+                })
+                .catch(err => console.error("Error:", err));
+            }
+            </script>
+                
+                <button class="btn-login" onclick="performLogin()" style="width: 100%; font-size: 18px; padding: 16px;">התחבר</button> 
+                <div style="text-align: center; margin-top: 15px;">
+                    <button class="btn-text-link" onclick="showForgotPassword()">שכחתי סיסמה</button>
+                </div>
+                <button class="btn-register" onclick="toggleForms()">אין עדיין חשבון? הירשם כאן</button>
+            </div>
         </div>
-    </div>
 
     <div class="todo-container" id="register-container" style="display: none; max-width: 400px; justify-content: center;">
         <h1><span class="emoji-paw">🐾</span> הרשמה</h1>
