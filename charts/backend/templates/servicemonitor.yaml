@@ -2,16 +2,16 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ include "backend.fullname" . }}
+  name: {{ include "devops-dogops-backend-chart.fullname" . }}
   labels:
-    {{- include "backend.labels" . | nindent 4 }}
-    release: kube-prometheus-stack # תווית חובה כדי שפרומיתיאוס יאסוף את זה!
+    {{- include "devops-dogops-backend-chart.labels" . | nindent 4 }}
+    release: kube-prometheus-stack
 spec:
   selector:
     matchLabels:
-      {{- include "backend.selectorLabels" . | nindent 6 }}
+      {{- include "devops-dogops-backend-chart.selectorLabels" . | nindent 6 }}
   endpoints:
-    - port: http # מוודא שזה תואם לשם הפורט ב-Service שלך
+    - port: http
       path: {{ .Values.serviceMonitor.path }}
       interval: {{ .Values.serviceMonitor.interval }}
 {{- end }}
