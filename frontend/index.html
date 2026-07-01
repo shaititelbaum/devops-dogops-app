@@ -189,6 +189,7 @@
 
         <div class="nav-menu">
             <button id="tab-dashboard" class="nav-item active" onclick="switchView('dashboard')">📋 לוח דיווח</button>
+            <button id="tab-weather" class="nav-item" onclick="switchView('weather')">🌤️ מזג אוויר</button> <!-- 👈 הטאב החדש -->
             <button id="tab-mydog" class="nav-item" onclick="switchView('mydog')">🐕 הכלב שלי</button>
             <button id="tab-history" class="nav-item" onclick="switchView('history')">📜 היסטוריה</button>
             <button id="tab-vaccines" class="nav-item" onclick="switchView('vaccines')">💉 פנקס רפואי</button>
@@ -247,6 +248,20 @@
             <div class="button-group">
                 <button class="btn-good" onclick="addDogEvent('good')">🟢 כלב טוב !</button>
                 <button class="btn-oops" onclick="addDogEvent('oops')">🔴 אופס...</button>
+            </div>
+        </div>
+
+        <div id="weather-section" style="display: none; flex-direction: column; align-items: center; width: 100%;">
+            <div class="dog-details-card" style="width: 100%; max-width: 400px; text-align: center;">
+                <h3 style="color: white; margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">🌤️ סטטוס שטח למאלף</h3>
+                <div id="weather-loading" style="color: #cbd5e1; margin: 20px 0;">📡 מתביית על מיקום הלוויין...</div>
+                <div id="weather-display" class="hidden">
+                    <div style="font-size: 50px;" id="we-emoji">☀️</div>
+                    <div style="font-size: 32px; font-weight: 800; color: white; margin-bottom: 5px;" id="we-temp">24°C</div>
+                    <div style="color: #bae6fd; font-size: 16px; font-weight: bold; margin-bottom: 15px;" id="we-desc">בהיר</div>
+                    <div style="font-size: 12px; color: #cbd5e1; margin-bottom: 15px;" id="we-wind">💨 מהירות רוח: 12 קמ"ש</div>
+                    <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; font-size: 13px; color: #fef08a; line-height: 1.4; text-align: right;" id="we-tip"></div>
+                </div>
             </div>
         </div>
 
@@ -648,6 +663,9 @@
                     // 👈 חדש: מכניסים את הנתונים החדשים לבקשה
                     body: JSON.stringify({ email, password, first_name: firstName, last_name: lastName, dog_name: dogName }) 
                 });
+
+                const data = await response.json(); // 👈 השורה שנמחקה בטעות והוחזרה!
+                
                 // ... המשך הפונקציה נשאר זהה ...
                 if (response.ok) {
                     alert("ההרשמה הצליחה! עכשיו אפשר להתחבר.");
@@ -748,9 +766,6 @@
             icon.innerText = '⏳'; // מראה טעינה בזמן פנייה לשרת
             clearTimeout(emailCheckTimeout);
             // ... (מכאן הפונקציה ממשיכה אותו דבר עם ה-setTimeout)
-
-            icon.innerText = '⏳'; // מראה טעינה בזמן פנייה לשרת
-            clearTimeout(emailCheckTimeout);
             
             // מנגנון Debounce: מחכה חצי שניה אחרי סיום ההקלדה כדי לא להציף את השרת
             emailCheckTimeout = setTimeout(async () => {
@@ -901,10 +916,10 @@
             if (viewName === 'dashboard') container.classList.remove('wide-mode');
             else container.classList.add('wide-mode');
 
-            // הוספנו את settings למערך האזורים
-            const sectionMap = { 'dashboard': 'input-section', 'mydog': 'mydog-section', 'history': 'history-section', 'vaccines': 'vaccine-section', 'summaries': 'summaries-section', 'ai': 'ai-section', 'settings': 'settings-section' };
-            const sections = ['input-section', 'mydog-section', 'history-section', 'vaccine-section', 'summaries-section', 'ai-section', 'settings-section'];
-            
+            // עדכון המפות עם הטאב החדש
+            const sectionMap = { 'dashboard': 'input-section', 'weather': 'weather-section', 'mydog': 'mydog-section', 'history': 'history-section', 'vaccines': 'vaccine-section', 'summaries': 'summaries-section', 'ai': 'settings-section', 'settings': 'settings-section' };
+            const sections = ['input-section', 'weather-section', 'mydog-section', 'history-section', 'vaccine-section', 'summaries-section', 'settings-section'];
+
             sections.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
@@ -916,6 +931,11 @@
             document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
             const activeTab = document.getElementById(`tab-${viewName}`);
             if (activeTab) activeTab.classList.add('active');
+
+            // אם עברנו ללשונית מזג אוויר - נבקש הרשאת מיקום מהדפדפן ונמשוך נתונים
+            if (viewName === 'weather') {
+                getLiveLocationWeather();
+            }
 
             if (viewName === 'history') fetchTodos();
             if (viewName === 'vaccines') fetchVaccines();
@@ -2000,6 +2020,40 @@ async function addDogEvent(type) {
             } finally {
                 typing.style.display = 'none';
                 typing.innerText = "ה-AI מנתח את נתוני היום ומפיק סיכום..."; // מחזיר למקור
+            }
+        }
+
+
+        function getLiveLocationWeather() {
+            document.getElementById('weather-loading').classList.remove('hidden');
+            document.getElementById('weather-display').classList.add('hidden');
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+
+                    try {
+                        const res = await fetch(`/api/weather?lat=${lat}&lon=${lon}`, { headers: getAuthHeaders() });
+                        if (res.ok) {
+                            const data = await res.json();
+                            document.getElementById('we-emoji').innerText = data.emoji;
+                            document.getElementById('we-temp').innerText = `${data.temp}°C`;
+                            document.getElementById('we-desc').innerText = data.description;
+                            document.getElementById('we-wind').innerText = `💨 מהירות רוח: ${data.wind_speed} קמ"ש`;
+                            document.getElementById('we-tip').innerText = data.tip;
+
+                            document.getElementById('weather-loading').classList.add('hidden');
+                            document.getElementById('weather-display').classList.remove('hidden');
+                        }
+                    } catch (e) {
+                        document.getElementById('weather-loading').innerText = "❌ שגיאה במשיכת נתוני שרת מזג האוויר";
+                    }
+                }, (error) => {
+                    document.getElementById('weather-loading').innerText = "❌ חובה לאשר גישת מיקום (GPS) בדפדפן כדי לראות מזג אוויר בשטח";
+                });
+            } else {
+                document.getElementById('weather-loading').innerText = "❌ הדפדפן שלך לא תומך ברכיב מיקום";
             }
         }
 

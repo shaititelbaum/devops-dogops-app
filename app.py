@@ -1,4 +1,5 @@
 import os
+import requests  # 👈 השורה החשובה שהייתה חסרה!
 import google.generativeai as genai
 from flask import Flask, jsonify, request
 import boto3
@@ -7,6 +8,7 @@ import random
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.image import MIMEImage  # 👈 הוסף את השורה הזו
 from datetime import datetime, timedelta
 
 
@@ -118,11 +120,48 @@ def send_real_email(to_email, subject, body):
         print("אזהרה: פרטי SMTP לא מוגדרים. המייל לא יישלח בפועל.")
         return False
 
-    msg = MIMEMultipart()
+    # ממיר את ירידות השורה של פייתון לשורות ש-HTML מבין
+    formatted_body = body.replace('\n', '<br>')
+
+    msg = MIMEMultipart('related')
     msg['From'] = smtp_user
     msg['To'] = to_email
     msg['Subject'] = subject
-    msg.attach(MIMEText(body, 'plain', 'utf-8'))
+
+    # עיצוב המייל ב-HTML
+    html_content = f"""
+    <html dir="rtl">
+    <body style="font-family: 'Segoe UI', Tahoma, Arial, sans-serif; background-color: #f1f5f9; padding: 30px; text-align: center;">
+        <div style="background-color: white; max-width: 500px; margin: 0 auto; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <div style="background-color: #0f172a; padding: 20px;">
+                <img src="cid:dog_logo" alt="DogOps Header" style="width: 100%; max-width: 400px; height: auto; border-radius: 8px;">
+            </div>
+            <div style="padding: 30px; color: #333; text-align: right;">
+                <h2 style="color: #0f172a; margin-top: 0;">עדכון ממערכת DogOps 🐾</h2>
+                <p style="font-size: 16px; line-height: 1.6; color: #475569;">
+                    {formatted_body}
+                </p>
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
+                    נשלח אוטומטית ממערכת האילוף המתקדמת DogOps
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    msg.attach(MIMEText(html_content, 'html', 'utf-8'))
+
+    # חיפוש והטמעת תמונת הכלבים מהנתיב המקומי בתוך הקונטיינר
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    img_path = os.path.join(base_dir, 'frontend', 'assets', 'dogsmailpic.jpg')
+    
+    try:
+        with open(img_path, 'rb') as f:
+            img = MIMEImage(f.read())
+            img.add_header('Content-ID', '<dog_logo>')
+            msg.attach(img)
+    except Exception as e:
+        print(f"Warning: Could not attach image: {e}")
 
     try:
         server = smtplib.SMTP(smtp_server, smtp_port)
@@ -469,6 +508,60 @@ def upload_image():
         db.session.commit()
         
         return jsonify({"image_url": image_url}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ==========================================
+# Routes: Weather API (Trainer Optimized)
+# ==========================================
+@app.route('/api/weather', methods=['GET'])
+@jwt_required()
+def get_weather():
+    lat = request.args.get('lat')
+    lon = request.args.get('lon')
+    
+    if not lat or not lon:
+        return jsonify({"error": "Missing coordinates"}), 400
+        
+    try:
+        # פנייה ישירה ל-Open-Meteo עם המיקום החי, כולל לחות ומהירות רוח החשובים לאימון
+        weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true&hourly=relative_humidity_2m"
+        weather_res = requests.get(weather_url, timeout=5).json()
+        
+        current = weather_res['current_weather']
+        temp = round(current['temperature'])
+        code = current['weathercode']
+        wind = current['windspeed']
+        
+        # מפות קודים ואימוג'ים
+        weather_map = {
+            0: ("שמיים בהירים נוחים לאימון", "☀️"),
+            1: ("מעונן חלקית", "🌤️"),
+            2: ("מעונן עדין", "⛅"),
+            3: ("מעונן לגמרי", "☁️"),
+            61: ("גשם קל - מומלץ מחסה", "🌧️"),
+            63: ("גשם שוטף - העבר אימון למקום מקורה", "🌧️"),
+            95: ("סופת רעמים - סכנה בשטח פתוח", "🌩️")
+        }
+        desc, emoji = weather_map.get(code, ("מזג אוויר משתנה", "🌡️"))
+        
+        # לוגיקה חכמה למאלף הכלבים (התראות בטיחות לכלבים)
+        trainer_tip = "🟢 תנאים מעולים לעבודה בשטח!"
+        if temp >= 30:
+            trainer_tip = "🚨 אזהרת עומס חום! סכנת כוויות בכפות הרגליים מהאספלט ומכת חום לכלב. קחו הפסקות מים מרובות."
+        elif temp <= 10:
+            trainer_tip = "❄️ קר בחוץ. כלבים קטנים או בעלי שיער קצר צריכים תנועה מתמדת כדי לא לקפוא."
+        elif code in [61, 63, 80, 95]:
+            trainer_tip = "🌧️ גשם בשטח. מומלץ להתמקד בתוך מבנה או לעבוד על פקודות משמעת בבית הלקוח."
+
+        return jsonify({
+            "temp": temp,
+            "description": desc,
+            "emoji": emoji,
+            "wind_speed": wind,
+            "tip": trainer_tip
+        }), 200
+        
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
