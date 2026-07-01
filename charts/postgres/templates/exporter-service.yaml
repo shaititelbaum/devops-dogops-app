@@ -5,6 +5,7 @@ metadata:
   name: {{ include "postgres.fullname" . }}-exporter
   labels:
     {{- include "postgres.labels" . | nindent 4 }}
+    app.kubernetes.io/component: exporter # 👈 זו השורה שהייתה חסרה!
 spec:
   type: ClusterIP
   ports:
