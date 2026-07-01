@@ -68,3 +68,8 @@ s3BucketName: "devops-dogops-images"
 
 aws:
   irsaEnabled: false
+
+serviceMonitor:
+  enabled: true
+  path: /metrics
+  interval: 15s

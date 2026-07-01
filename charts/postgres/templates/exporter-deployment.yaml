@@ -1,0 +1,42 @@
+{{- if .Values.metrics.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "postgres.fullname" . }}-exporter
+  labels:
+    {{- include "postgres.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "postgres.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: exporter
+  template:
+    metadata:
+      labels:
+        {{- include "postgres.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: exporter
+    spec:
+      containers:
+        - name: postgres-exporter
+          image: {{ .Values.metrics.image }}
+          ports:
+            - name: metrics
+              containerPort: 9187
+          env:
+            - name: DB_HOST
+              # הלוגיקה החכמה: אם יש פוד מקומי, פנה אליו. אם לא (RDS), תמשוך את הכתובת ממשתני הסביבה/סודות בענן
+              value: {{ if .Values.postgres.enabled }}{{ include "postgres.fullname" . }}{{ else }}"$(EXTERNAL_DB_HOST)"{{ end }}
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.auth.existingSecret }}
+                  key: {{ .Values.auth.usernameKey }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.auth.existingSecret }}
+                  key: {{ .Values.auth.secretPasswordKey }}
+            - name: DATA_SOURCE_NAME
+              value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(DB_HOST):5432/?sslmode=disable"
+{{- end }}

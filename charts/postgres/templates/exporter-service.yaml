@@ -1,0 +1,18 @@
+{{- if .Values.metrics.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "postgres.fullname" . }}-exporter
+  labels:
+    {{- include "postgres.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9187
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+  selector:
+    {{- include "postgres.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: exporter
+{{- end }}

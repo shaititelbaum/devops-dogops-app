@@ -1,0 +1,17 @@
+{{- if .Values.metrics.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "postgres.fullname" . }}-exporter
+  labels:
+    {{- include "postgres.labels" . | nindent 4 }}
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      {{- include "postgres.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: exporter
+  endpoints:
+    - port: metrics
+      interval: 15s
+{{- end }}
