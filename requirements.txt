@@ -4,3 +4,4 @@ flask-sqlalchemy
 flask-jwt-extended
 psycopg2-binary
 boto3
+prometheus-flask-exporter==0.23.0

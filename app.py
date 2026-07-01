@@ -15,7 +15,13 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import generate_password_hash, check_password_hash
 
+from prometheus_flask_exporter import PrometheusMetrics
+
 app = Flask(__name__)
+
+# 👈 הוסף אתחול של המדדים:
+metrics = PrometheusMetrics(app)
+metrics.info('app_info', 'DogOps Application info', version='1.0.0')
 
 # הגדרות בסיס נתונים (ייקראו אוטומטית מהסביבה בקוברנטיס)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/dogops')
