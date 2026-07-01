@@ -17,7 +17,12 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 from prometheus_flask_exporter import PrometheusMetrics
 
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+
 app = Flask(__name__)
+
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "ה-CLIENT_ID_שלך_מגוגל.apps.googleusercontent.com")
 
 # 👈 הוסף אתחול של המדדים:
 metrics = PrometheusMetrics(app)
@@ -348,6 +353,36 @@ def delete_account():
     send_real_email(email_to_send, "DogOps - אישור מחיקת חשבון", body)
 
     return jsonify({"message": "החשבון נמחק לצמיתות"}), 200
+
+
+@app.route('/api/auth/google', methods=['POST'])
+def google_sso():
+    token = request.json.get('token')
+    if not token:
+        return jsonify({"error": "No token provided"}), 400
+        
+    try:
+        # 1. אימות הטוקן מול השרתים של גוגל
+        idinfo = id_token.verify_oauth2_token(token, google_requests.Request(), GOOGLE_CLIENT_ID)
+        
+        # 2. שליפת האימייל מהטוקן המאומת
+        email = idinfo['email']
+        
+        # 3. בדיקה אם המשתמש קיים ב-DB שלך (התאם את מודל ה-User לשם המודל שלך)
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            # אם הוא לא קיים, ניצור אותו אוטומטית (בלי סיסמה, כי גוגל מאמת אותו)
+            user = User(email=email, password_hash="GOOGLE_SSO_USER")
+            db.session.add(user)
+            db.session.commit()
+            
+        # 4. הנפקת ה-JWT של המערכת שלך כדי ששאר הראוטים יעבדו!
+        access_token = create_access_token(identity=user.id)
+        return jsonify(access_token=access_token), 200
+        
+    except ValueError:
+        # טוקן שגוי, פג תוקף או ניסיון זיוף
+        return jsonify({"error": "Invalid or expired Google token"}), 401
 
 # ==========================================
 # Routes: Dog Profile & S3 Image Upload
