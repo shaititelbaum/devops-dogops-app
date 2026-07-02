@@ -18,6 +18,7 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from prometheus_flask_exporter import PrometheusMetrics
+from prometheus_client import Counter, Gauge, Histogram # 👈 הוסף את השורה הזו
 
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
@@ -29,6 +30,28 @@ GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "ה-CLIENT_ID_שלך_מגוגל
 # 👈 הוסף אתחול של המדדים:
 metrics = PrometheusMetrics(app)
 metrics.info('app_info', 'DogOps Application info', version='1.0.0')
+
+
+# ==========================================
+# Custom Prometheus Metrics
+# ==========================================
+# 1. Gauge: עוקב אחרי כמות הפרופילים הקיימים במערכת (מספר שיכול לעלות ולרדת)
+DOG_PROFILES_GAUGE = Gauge('dogops_active_profiles', 'Number of dog profiles registered in the system')
+
+# 2. Counter: סופר כמה דיווחים התקבלו, מחולק לפי תווית (טוב/רע)
+DOG_EVENTS_COUNTER = Counter('dogops_behavior_events_total', 'Total behavior events logged', ['event_type'])
+
+# 3. Histogram: מודד כמה זמן לוקח למודל ה-AI לענות (עם Buckets משלנו)
+AI_LATENCY_HISTOGRAM = Histogram('dogops_ai_response_seconds', 'Time spent waiting for Gemini AI', buckets=(0.5, 1.0, 2.0, 3.0, 5.0, float("inf")))
+
+# 4. Counter: מעקב אחרי שגיאות התחברות (חיוני לזיהוי מתקפות Brute Force)
+LOGIN_FAILURES_COUNTER = Counter('dogops_login_failures_total', 'Total failed login attempts')
+
+# 5. Histogram: זמני העלאת תמונות ל-AWS S3
+S3_UPLOAD_LATENCY_HISTOGRAM = Histogram('dogops_s3_upload_seconds', 'Time spent uploading to S3')
+
+# 6. Histogram: זמני תגובה של שירות מזג האוויר החיצוני
+WEATHER_API_LATENCY_HISTOGRAM = Histogram('dogops_weather_api_seconds', 'Time spent fetching weather')
 
 # הגדרות בסיס נתונים (ייקראו אוטומטית מהסביבה בקוברנטיס)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/dogops')
@@ -234,6 +257,9 @@ def register():
     body = f"אהלן {first_name} ו-{dog_name}!\n\nברוכים הבאים ל-DogOps, מערכת האילוף והמעקב המובילה בענן.\nשמחים שהצטרפתם לקהילה שלנו!\n\nבהצלחה באילוף,\nצוות DogOps 🐾"
     send_real_email(email, "ברוכים הבאים ל-DogOps! 🐾", body)
 
+    # עדכון מד-החום כלפי מעלה כשנוצר כלב חדש
+    DOG_PROFILES_GAUGE.inc()
+
     return jsonify({"message": "המשתמש נוצר בהצלחה!"}), 201
 
 @app.route('/api/login', methods=['POST'])
@@ -242,6 +268,7 @@ def login():
     user = User.query.filter_by(email=data.get('email')).first()
 
     if not user or not check_password_hash(user.password_hash, data.get('password')):
+        LOGIN_FAILURES_COUNTER.inc() # 👈 סופר כישלון התחברות!
         return jsonify({"error": "אימייל או סיסמה שגויים"}), 401
 
     # חסימת 90 יום!
@@ -391,6 +418,9 @@ def delete_account():
     body = f"שלום {first_name},\n\nחשבונך במערכת DogOps וכל המידע המקושר אליו נמחקו בהצלחה לבקשתך.\nנשמח לראותך שוב בעתיד!\n\nצוות DogOps 🐾"
     send_real_email(email_to_send, "DogOps - אישור מחיקת חשבון", body)
 
+    # עדכון מד-החום כלפי מטה כשמוחקים חשבון
+    DOG_PROFILES_GAUGE.dec()
+
     return jsonify({"message": "החשבון נמחק לצמיתות"}), 200
 
 
@@ -491,12 +521,13 @@ def upload_image():
             s3_client.delete_objects(Bucket=S3_BUCKET, Delete={'Objects': objects_to_delete})
             
         # 2. העלאת התמונה החדשה לאמזון
-        s3_client.upload_fileobj(
-            file,
-            S3_BUCKET,
-            filename,
-            ExtraArgs={'ContentType': file.content_type}
-        )
+        with S3_UPLOAD_LATENCY_HISTOGRAM.time(): # 👈 מודד כמה זמן זה לוקח!
+            s3_client.upload_fileobj(
+                file,
+                S3_BUCKET,
+                filename,
+                ExtraArgs={'ContentType': file.content_type}
+            )
         region = os.getenv('AWS_REGION', 'us-east-1')
         image_url = f"https://{S3_BUCKET}.s3.{region}.amazonaws.com/{filename}"
         
@@ -524,9 +555,10 @@ def get_weather():
         return jsonify({"error": "Missing coordinates"}), 400
         
     try:
-        # פנייה ישירה ל-Open-Meteo עם המיקום החי, כולל לחות ומהירות רוח החשובים לאימון
-        weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true&hourly=relative_humidity_2m"
-        weather_res = requests.get(weather_url, timeout=5).json()
+        with WEATHER_API_LATENCY_HISTOGRAM.time(): # 👈 מודד עיכובי רשת
+            # פנייה ישירה ל-Open-Meteo עם המיקום החי, כולל לחות ומהירות רוח החשובים לאימון
+            weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true&hourly=relative_humidity_2m"
+            weather_res = requests.get(weather_url, timeout=5).json()
         
         current = weather_res['current_weather']
         temp = round(current['temperature'])
@@ -584,7 +616,11 @@ def chat_with_ai():
             
         model = genai.GenerativeModel(valid_models[0])
         prompt = f"אתה מאלף כלבים מומחה. המשתמש שאל: {user_message}. ענה בצורה תמציתית ומקצועית."
-        response = model.generate_content(prompt)
+        
+        # 👇 תפיסת זמן התגובה לתוך ההיסטוגרמה!
+        with AI_LATENCY_HISTOGRAM.time():
+            response = model.generate_content(prompt)
+
         return jsonify({"response": response.text}), 200
     except Exception as e:
         return jsonify({"error": f"שגיאת תקשורת: {str(e)}"}), 500
@@ -617,6 +653,11 @@ def create_todo():
     )
     db.session.add(new_todo)
     db.session.commit()
+    # קידום המונה עם תווית חכמה לפי סוג האירוע
+    if "🔴" in new_todo.title:
+        DOG_EVENTS_COUNTER.labels(event_type='oops').inc()
+    elif "🟢" in new_todo.title:
+        DOG_EVENTS_COUNTER.labels(event_type='good').inc()
     return jsonify({"id": new_todo.id, "title": new_todo.title, "created_at": new_todo.created_at}), 201
 
 @app.route('/api/todos/<int:todo_id>', methods=['PUT'])
