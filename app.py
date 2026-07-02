@@ -10,6 +10,8 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage  # 👈 הוסף את השורה הזו
 from datetime import datetime, timedelta
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 
 # ייבוא ספריות ה-DB והאבטחה
@@ -24,6 +26,13 @@ from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 
 app = Flask(__name__)
+
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "ה-CLIENT_ID_שלך_מגוגל.apps.googleusercontent.com")
 
@@ -602,6 +611,7 @@ def get_weather():
 # ==========================================
 @app.route('/api/chat', methods=['POST'])
 @jwt_required()
+@limiter.limit("5 per minute") # 👈 שורת ההגנה החדשה
 def chat_with_ai():
     if not api_key:
         return jsonify({"response": "מפתח ה-API של ה-AI לא הוגדר בשרת."}), 500
