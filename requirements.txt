@@ -7,3 +7,4 @@ boto3
 prometheus-flask-exporter==0.23.0
 google-auth
 requests
+Flask-Limiter==3.5.0
