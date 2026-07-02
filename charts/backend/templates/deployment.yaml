@@ -103,6 +103,12 @@ spec:
             # הזרקת משתני SSO
             - name: GOOGLE_CLIENT_ID
               value: {{ .Values.googleClientId | quote }}
+            # הזרקת המפתח של Gemini AI
+            - name: GOOGLE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gemini-credentials
+                  key: GOOGLE_API_KEY
           # ----------------------------------------------------------------------------------
 
           {{- with .Values.livenessProbe }}
