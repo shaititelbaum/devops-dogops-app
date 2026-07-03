@@ -38,7 +38,7 @@
                  data-client_id="704471023932-54jgfkg894gq0ka082c0uhrvempts6c6.apps.googleusercontent.com"
                  data-callback="handleGoogleLogin">
             </div>
-            <div class="g_id_signin" data-type="standard" data-theme="outline" data-size="large" style="margin-top: 15px; display: flex; justify-content: center;"></div>
+            <div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="filled_black" data-text="signin_with" data-size="large" data-logo_alignment="left"></div>
 
             <script>
             function handleGoogleLogin(response) {
@@ -917,7 +917,7 @@
             else container.classList.add('wide-mode');
 
             // עדכון המפות עם הטאב החדש
-            const sectionMap = { 'dashboard': 'input-section', 'weather': 'weather-section', 'mydog': 'mydog-section', 'history': 'history-section', 'vaccines': 'vaccine-section', 'summaries': 'summaries-section', 'ai': 'settings-section', 'settings': 'settings-section' };
+            const sectionMap = { 'dashboard': 'input-section', 'weather': 'weather-section', 'mydog': 'mydog-section', 'history': 'history-section', 'vaccines': 'vaccine-section', 'summaries': 'summaries-section', 'ai': 'ai-section', 'settings': 'settings-section' };
             const sections = ['input-section', 'weather-section', 'mydog-section', 'history-section', 'vaccine-section', 'summaries-section', 'settings-section'];
 
             sections.forEach(id => {

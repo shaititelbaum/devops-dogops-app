@@ -109,6 +109,12 @@ spec:
                 secretKeyRef:
                   name: gemini-credentials
                   key: GOOGLE_API_KEY
+            # הזרקת המפתח של OpenWeather
+            - name: OPENWEATHER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openweather-secret
+                  key: OPENWEATHER_API_KEY
           # ----------------------------------------------------------------------------------
 
           {{- with .Values.livenessProbe }}

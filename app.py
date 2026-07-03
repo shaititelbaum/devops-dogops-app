@@ -27,6 +27,7 @@ from google.auth.transport import requests as google_requests
 
 app = Flask(__name__)
 
+
 limiter = Limiter(
     get_remote_address,
     app=app,
@@ -141,41 +142,36 @@ class Summary(db.Model):
 with app.app_context():
     db.create_all()
 
-def send_real_email(to_email, subject, body):
-    # משתני סביבה שנספק דרך קוברנטיס בהמשך
+def send_dogops_email(to_email, subject, title, body_text):
     smtp_server = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
     smtp_port = int(os.getenv('SMTP_PORT', 587))
-    smtp_user = os.getenv('SMTP_USERNAME') # האימייל השולח (למשל dogops.system@gmail.com)
-    smtp_pass = os.getenv('SMTP_PASSWORD') # סיסמת אפליקציה של גוגל
+    smtp_user = os.getenv('SMTP_USERNAME')
+    smtp_pass = os.getenv('SMTP_PASSWORD')
 
     if not smtp_user or not smtp_pass:
         print("אזהרה: פרטי SMTP לא מוגדרים. המייל לא יישלח בפועל.")
         return False
 
-    # ממיר את ירידות השורה של פייתון לשורות ש-HTML מבין
-    formatted_body = body.replace('\n', '<br>')
+    formatted_body = body_text.replace('\n', '<br>')
 
     msg = MIMEMultipart('related')
-    msg['From'] = smtp_user
+    msg['From'] = f"DogOps <{smtp_user}>"
     msg['To'] = to_email
     msg['Subject'] = subject
 
-    # עיצוב המייל ב-HTML
     html_content = f"""
-    <html dir="rtl">
-    <body style="font-family: 'Segoe UI', Tahoma, Arial, sans-serif; background-color: #f1f5f9; padding: 30px; text-align: center;">
-        <div style="background-color: white; max-width: 500px; margin: 0 auto; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-            <div style="background-color: #0f172a; padding: 20px;">
-                <img src="cid:dog_logo" alt="DogOps Header" style="width: 100%; max-width: 400px; height: auto; border-radius: 8px;">
+    <html dir="rtl" lang="he">
+    <body style="font-family: Arial, sans-serif; text-align: right; direction: rtl; color: #333; background-color: #f9f9f9; padding: 20px;">
+        <div style="background-color: #ffffff; padding: 20px; border-radius: 10px; max-width: 500px; margin: 0 auto; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 20px; background-color: #0f172a; border-radius: 8px;">
+                <img src="cid:dog_logo" alt="DogOps Logo" style="width:100%; max-width:250px; border-radius:10px;">
             </div>
-            <div style="padding: 30px; color: #333; text-align: right;">
-                <h2 style="color: #0f172a; margin-top: 0;">עדכון ממערכת DogOps 🐾</h2>
-                <p style="font-size: 16px; line-height: 1.6; color: #475569;">
-                    {formatted_body}
-                </p>
-                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
-                    נשלח אוטומטית ממערכת האילוף המתקדמת DogOps
-                </div>
+            <h2 style="color: #064e3b; text-align: center;">{title}</h2>
+            <div style="font-size: 16px; line-height: 1.6; padding: 10px;">
+                {formatted_body}
+            </div>
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
+                נשלח אוטומטית ממערכת האילוף המתקדמת DogOps
             </div>
         </div>
     </body>
@@ -183,9 +179,8 @@ def send_real_email(to_email, subject, body):
     """
     msg.attach(MIMEText(html_content, 'html', 'utf-8'))
 
-    # חיפוש והטמעת תמונת הכלבים מהנתיב המקומי בתוך הקונטיינר
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    img_path = os.path.join(base_dir, 'frontend', 'assets', 'dogsmailpic.jpg')
+    img_path = os.path.join(base_dir, 'frontend', 'assets', 'dogsmailpic.png') # כאן מוגדרת ה-PNG הנכונה
     
     try:
         with open(img_path, 'rb') as f:
@@ -262,9 +257,9 @@ def register():
         new_dog = DogProfile(user_id=new_user.id, name=dog_name)
         db.session.add(new_dog)
         db.session.commit()
-    # שליחת אימייל הרשמה
+    
     body = f"אהלן {first_name} ו-{dog_name}!\n\nברוכים הבאים ל-DogOps, מערכת האילוף והמעקב המובילה בענן.\nשמחים שהצטרפתם לקהילה שלנו!\n\nבהצלחה באילוף,\nצוות DogOps 🐾"
-    send_real_email(email, "ברוכים הבאים ל-DogOps! 🐾", body)
+    send_dogops_email(email, "ברוכים הבאים ל-DogOps! 🐾", "איזה כיף שהצטרפת!", body)
 
     # עדכון מד-החום כלפי מעלה כשנוצר כלב חדש
     DOG_PROFILES_GAUGE.inc()
@@ -301,8 +296,8 @@ def forgot_password():
     db.session.commit()
     
     body = f"שלום,\n\nהתקבלה בקשה לאיפוס סיסמה בחשבון ה-DogOps שלך.\nקוד האימות שלך הוא: {code}\n\nהקוד תקף ל-15 דקות.\nאם לא אתה ביקשת לאפס את הסיסמה, אנא התעלם מהודעה זו."
-    
-    success = send_real_email(user.email, "DogOps - קוד לאיפוס סיסמה", body)
+    success = send_dogops_email(user.email, "DogOps - קוד לאיפוס סיסמה", "איפוס סיסמה", body) 
+
     if not success:
         return jsonify({"error": "שגיאה בשליחת האימייל. בדוק אם השרת מוגדר כראוי."}), 500
 
@@ -425,7 +420,7 @@ def delete_account():
 
     # שליחת אימייל פרידה
     body = f"שלום {first_name},\n\nחשבונך במערכת DogOps וכל המידע המקושר אליו נמחקו בהצלחה לבקשתך.\nנשמח לראותך שוב בעתיד!\n\nצוות DogOps 🐾"
-    send_real_email(email_to_send, "DogOps - אישור מחיקת חשבון", body)
+    send_dogops_email(email_to_send, "DogOps - אישור מחיקת חשבון", "פרידה מ-DogOps", body)
 
     # עדכון מד-החום כלפי מטה כשמוחקים חשבון
     DOG_PROFILES_GAUGE.dec()
