@@ -70,7 +70,7 @@ databaseName: "dogopsdb"
 s3BucketName: "devops-dogops-images"
 
 aws:
-  irsaEnabled: false
+  irsaEnabled: true
 
 serviceMonitor:
   enabled: true
