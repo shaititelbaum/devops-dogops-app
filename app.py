@@ -178,18 +178,26 @@ def send_dogops_email(to_email, subject, title, body_text):
     </html>
     """
     msg.attach(MIMEText(html_content, 'html', 'utf-8'))
-
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    img_path = os.path.join(base_dir, 'frontend', 'assets', 'dogsmailpic.png') # כאן מוגדרת ה-PNG הנכונה
     
-    try:
-        with open(img_path, 'rb') as f:
-            img = MIMEImage(f.read())
-            img.add_header('Content-ID', '<dog_logo>')
-            msg.attach(img)
-    except Exception as e:
-        print(f"Warning: Could not attach image: {e}")
-
+    # צירוף התמונה בצורה מוחלטת ובטוחה
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    img_path = os.path.join(base_dir, 'frontend', 'assets', 'dogsmailpic.png')
+    
+    if os.path.exists(img_path):
+        try:
+            with open(img_path, 'rb') as f:
+                img_data = f.read()
+            
+            # הגדרת סוג הקובץ במפורש (png) קריטית להצגה ב-Gmail
+            image = MIMEImage(img_data, _subtype='png', name='dogsmailpic.png')
+            image.add_header('Content-ID', '<dog_logo>')
+            image.add_header('Content-Disposition', 'inline', filename='dogsmailpic.png')
+            msg.attach(image)
+        except Exception as img_e:
+            print(f"Image attach failed: {img_e}")
+    else:
+        print(f"CRITICAL ERROR: Image file not found at path: {img_path}")
+    
     try:
         server = smtplib.SMTP(smtp_server, smtp_port)
         server.starttls()
