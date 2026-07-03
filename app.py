@@ -155,16 +155,18 @@ def send_dogops_email(to_email, subject, title, body_text):
     formatted_body = body_text.replace('\n', '<br>')
 
     msg = MIMEMultipart('related')
-    msg['From'] = f"DogOps <{smtp_user}>"
+    # 👇 כאן הוספנו את תגית הסלוגן המלאה
+    msg['From'] = f"DogOps - עתיד האילוף <{smtp_user}>"
     msg['To'] = to_email
     msg['Subject'] = subject
 
+    # 👇 הסרנו את הרקע הכהה, והגדלנו את התמונה (max-width ל-450)
     html_content = f"""
     <html dir="rtl" lang="he">
     <body style="font-family: Arial, sans-serif; text-align: right; direction: rtl; color: #333; background-color: #f9f9f9; padding: 20px;">
-        <div style="background-color: #ffffff; padding: 20px; border-radius: 10px; max-width: 500px; margin: 0 auto; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-            <div style="text-align: center; margin-bottom: 20px; background-color: #0f172a; border-radius: 8px;">
-                <img src="cid:dog_logo" alt="DogOps Logo" style="width:100%; max-width:250px; border-radius:10px;">
+        <div style="background-color: #ffffff; padding: 20px; border-radius: 10px; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <img src="cid:dog_logo" alt="DogOps Logo" style="width:100%; max-width:450px; border-radius:10px;">
             </div>
             <h2 style="color: #064e3b; text-align: center;">{title}</h2>
             <div style="font-size: 16px; line-height: 1.6; padding: 10px;">
