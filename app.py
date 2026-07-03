@@ -166,7 +166,7 @@ def send_dogops_email(to_email, subject, title, body_text):
     <body style="font-family: Arial, sans-serif; text-align: right; direction: rtl; color: #333; background-color: #f9f9f9; padding: 20px;">
         <div style="background-color: #ffffff; padding: 20px; border-radius: 10px; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
             <div style="text-align: center; margin-bottom: 20px;">
-                <img src="cid:dog_logo" alt="DogOps Logo" style="width:100%; max-width:450px; border-radius:10px;">
+                <img src="cid:dog_logo" alt="DogOps Logo" style="width:100%; max-width:100%; height:auto; border-radius:10px; display:block;">
             </div>
             <h2 style="color: #064e3b; text-align: center;">{title}</h2>
             <div style="font-size: 16px; line-height: 1.6; padding: 10px;">
