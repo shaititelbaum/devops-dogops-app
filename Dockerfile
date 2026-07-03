@@ -12,6 +12,7 @@ WORKDIR /app
 
 COPY --from=builder /root/.local /root/.local
 COPY app.py .
+COPY frontend/ ./frontend/
 
 ENV PATH=/root/.local/bin:$PATH
 
