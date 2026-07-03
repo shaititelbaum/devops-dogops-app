@@ -21,3 +21,6 @@ env/
 .env
 *.pem
 *.key
+
+# Error screenshots
+/errors/
