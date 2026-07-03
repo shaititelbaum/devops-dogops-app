@@ -1484,3 +1484,38 @@ li {
     font-size: 12px;
     color: #bae6fd;
 }
+
+/* ==========================================
+   עיצוב שורת כפתורי SSO עגולים
+   ========================================== */
+.sso-buttons-container {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 15px;
+    margin-bottom: 20px;
+}
+
+.sso-circle-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #ffffff;
+    border: 1px solid #dadce0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.3s, box-shadow 0.3s;
+    padding: 0;
+}
+
+.sso-circle-btn img {
+    width: 20px;
+    height: auto;
+}
+
+.sso-circle-btn:hover {
+    background-color: #f8f9fa;
+    box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+}

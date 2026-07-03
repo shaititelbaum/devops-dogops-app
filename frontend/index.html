@@ -38,15 +38,26 @@
                  data-client_id="704471023932-54jgfkg894gq0ka082c0uhrvempts6c6.apps.googleusercontent.com"
                  data-callback="handleGoogleLogin">
             </div>
+            <div class="divider">או התחבר באמצעות</div>
+        
+        <div class="sso-buttons-container">
+            
             <div class="g_id_signin" 
-                data-type="standard" 
-                data-shape="pill" 
-                data-theme="outline" 
-                data-text="continue_with" 
-                data-size="large" 
-                data-width="320"
-                data-logo_alignment="center">
+                 data-type="icon" 
+                 data-shape="circle" 
+                 data-theme="outline" 
+                 data-size="large">
             </div>
+            
+            <button type="button" class="sso-circle-btn" onclick="alert('בקרוב: התחברות עם מיקרוסופט יעבוד אחרי שנביא מפתח!')" title="התחבר עם מיקרוסופט">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg" alt="Microsoft">
+            </button>
+
+            <button type="button" class="sso-circle-btn" onclick="alert('בקרוב: התחברות עם לינקדאין יעבוד אחרי שנביא מפתח!')" title="התחבר עם לינקדאין">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png" alt="LinkedIn">
+            </button>
+
+        </div>
 
             <script>
             function handleGoogleLogin(response) {
