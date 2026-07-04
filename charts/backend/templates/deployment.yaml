@@ -137,6 +137,11 @@ spec:
                 secretKeyRef:
                   name: linkedin-oauth-secret
                   key: LINKEDIN_CLIENT_SECRET
+            # הגדרות ניתוב Cloud First עבור ה-SSO
+            - name: MICROSOFT_REDIRECT_URI
+              value: "https://dogops.co/api/auth/microsoft/callback"
+            - name: LINKEDIN_REDIRECT_URI
+              value: "https://dogops.co/api/auth/linkedin/callback"
           # ----------------------------------------------------------------------------------
 
           {{- with .Values.livenessProbe }}
