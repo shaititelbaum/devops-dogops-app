@@ -1486,36 +1486,48 @@ li {
 }
 
 /* ==========================================
-   עיצוב שורת כפתורי SSO עגולים
+   עיצוב שורת כפתורי SSO עגולים ואנימציות
    ========================================== */
 .sso-buttons-container {
     display: flex;
     justify-content: center;
-    gap: 16px;
-    margin-top: 15px;
+    align-items: center;
+    gap: 20px;
+    margin-top: 10px; /* מרחק קצר ומהודק מהטופס */
     margin-bottom: 20px;
 }
 
 .sso-circle-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #ffffff;
-    border: 1px solid #dadce0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    /* שימוש ב-important כדי לדרוס את המתיחה של הטופס הכללי */
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    border-radius: 50% !important;
+    background-color: #ffffff !important; /* רקע לבן בדיוק כמו גוגל */
+    border: 1px solid #dadce0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     cursor: pointer;
-    transition: background-color 0.3s, box-shadow 0.3s;
-    padding: 0;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    padding: 0 !important;
 }
 
 .sso-circle-btn img {
     width: 20px;
-    height: auto;
+    height: 20px;
+    object-fit: contain;
+    transition: transform 0.4s ease;
 }
 
+/* האנימציה האלגנטית: מעבר לתאורה בצבעי ה-Theme של האפליקציה (טורקיז) */
 .sso-circle-btn:hover {
-    background-color: #f8f9fa;
-    box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+    background-color: #f0fdfa !important; /* רקע טורקיז עדין מאוד */
+    border-color: #14b8a6 !important; /* מסגרת טורקיז בולטת */
+    box-shadow: 0 0 15px rgba(20, 184, 166, 0.5) !important; /* הילה (Glow) התואמת ל-UI */
+    transform: translateY(-3px); /* ריחוף עדין למעלה */
+}
+
+.sso-circle-btn:hover img {
+    transform: scale(1.1); /* הקפצה קטנה של הלוגו */
 }
