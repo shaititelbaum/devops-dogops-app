@@ -89,6 +89,7 @@ class User(db.Model):
     reset_code = db.Column(db.String(10), nullable=True)
     reset_code_expiry = db.Column(db.DateTime, nullable=True)
     last_password_change = db.Column(db.DateTime, default=datetime.utcnow) # מתי שונתה סיסמה אחרונה
+    auth_provider = db.Column(db.String(50), default='local')
 
 class PasswordHistory(db.Model):
     __tablename__ = 'password_history'
@@ -255,7 +256,7 @@ def register():
 
     hashed_pw = generate_password_hash(password)
     # שמירת המשתמש עם השם המלא
-    new_user = User(email=email, password_hash=hashed_pw, first_name=first_name, last_name=last_name)
+    new_user = User(email=email, password_hash=hashed_pw, first_name=first_name, last_name=last_name, auth_provider='local')
     db.session.add(new_user)
     db.session.commit()
     # שמירת הסיסמה הראשונה בהיסטוריה
@@ -568,7 +569,7 @@ def microsoft_callback():
     last_name = user_info.get("surname", "")
 
     # לוגיקת התחברות או יצירת משתמש (בדיוק כמו בגוגל)
-    user = User.query.filter_by(email=email).first()
+    user = User(email=email, password_hash="LINKEDIN_SSO_USER", first_name=first_name, last_name=last_name, auth_provider="linkedin")
     if not user:
         user = User(email=email, password_hash="MICROSOFT_SSO_USER", first_name=first_name, last_name=last_name)
         db.session.add(user)
@@ -604,7 +605,7 @@ def google_sso():
         user = User.query.filter_by(email=email).first()
         if not user:
             # אם הוא לא קיים, ניצור אותו אוטומטית (בלי סיסמה, כי גוגל מאמת אותו)
-            user = User(email=email, password_hash="GOOGLE_SSO_USER")
+            user = User(email=email, password_hash="GOOGLE_SSO_USER", auth_provider="google")
             db.session.add(user)
             db.session.commit()
             
