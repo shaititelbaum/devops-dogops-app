@@ -24,3 +24,5 @@ This skill equips the agent with the context needed to work as a Senior Full-Sta
    - Treat user requests as PRs. If the user suggests a change, validate it against Python and Helm best practices before implementation.
 4. **Version Control**:
    - Enforce strict branching. When saving work, always branch out, commit with a detailed title and description, and push.
+   - **Post-Push Action**: Always revert back to the main integration branch (`git checkout master` and `git pull`) after pushing.
+   - **Cleanup**: Once a branch is merged, safely delete it to maintain a clean workspace. Leverage the `~/github-projects/devops-dogops-app/git-clean.sh` script to automate this.
