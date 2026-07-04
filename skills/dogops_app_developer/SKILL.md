@@ -23,9 +23,11 @@ This skill equips the agent with the context needed to work as a Senior Full-Sta
 3. **Code Reviews**:
    - Treat user requests as PRs. If the user suggests a change, validate it against Python and Helm best practices before implementation.
 4. **Version Control**:
-   - Enforce strict branching. When saving work, always branch out, commit with a detailed title and description, and push.
-   - **Post-Push Action**: Always revert back to the main integration branch (`git checkout master` and `git pull`) after pushing.
-   - **Cleanup**: Once a branch is merged, safely delete it to maintain a clean workspace. Leverage the `~/github-projects/devops-dogops-app/git-clean.sh` script to automate this.
+   - **Review First**: ALWAYS present the code changes to the user for review before committing or pushing.
+   - **Manual Push Trigger**: DO NOT automatically push. Only push when the user explicitly commands you to push.
+   - **Pre-Push Sync**: Always run `git pull` on the branch before pushing to avoid conflicts.
+   - **Post-Push Action**: Do nothing after pushing.
+   - **Cleanup**: When the user informs you a PR is merged, execute `~/github-projects/devops-dogops-app/git-clean.sh` to safely prune branches.
 5. **Documentation Lifecycle**:
    - Automatically update `README.md` when proposing new features.
    - Always ask for user approval on documentation changes before committing.

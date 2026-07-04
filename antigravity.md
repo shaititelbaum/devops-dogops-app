@@ -31,10 +31,11 @@
    - Ensure changes pass local validation before pushing.
 6. **Git Workflow**:
    - Always create a new branch for changes.
-   - Write meaningful conventional commit messages with a clear title and description.
-   - Never push directly to main/master.
-   - **Post-Push Action**: After pushing a branch, automatically run `git checkout master` and `git pull`.
-   - **Cleanup**: When a PR is closed/merged, clean up branches locally and remotely. You can execute `~/github-projects/devops-dogops-app/git-clean.sh` to safely prune all 3 repositories simultaneously.
+   - **Review First**: ALWAYS present the code changes to the user for review before committing or pushing.
+   - **Manual Push Trigger**: DO NOT automatically push. Only push when the user explicitly commands you to push.
+   - **Pre-Push Sync**: Always run `git pull` on the branch before pushing to avoid conflicts.
+   - **Post-Push Action**: Do nothing after pushing.
+   - **Cleanup**: When the user informs you a PR is merged, execute `~/github-projects/devops-dogops-app/git-clean.sh` to safely prune branches.
 7. **Documentation**:
    - Whenever adding a new feature or making architectural changes, you MUST update the `README.md`.
    - **Crucial**: Always present the `README.md` changes to the user for review before confirming or pushing.
