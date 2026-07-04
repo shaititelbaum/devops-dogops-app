@@ -175,7 +175,8 @@ def send_dogops_email(to_email, subject, title, body_text):
                 {formatted_body}
             </div>
             <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
-                נשלח אוטומטית ממערכת האילוף המתקדמת DogOps
+                נשלח אוטומטית ממערכת האילוף המתקדמת DogOps<br>
+                <a href="https://dogops.co" style="color: #3b82f6; text-decoration: none; font-weight: bold; margin-top: 8px; display: inline-block;">www.dogops.co</a>
             </div>
         </div>
     </body>
