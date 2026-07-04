@@ -42,19 +42,25 @@
         <!-- קונטיינר לשורת כפתורי ה-SSO -->
         <div class="sso-buttons-container">
             
-            <div class="sso-wrap sso-circle-btn">
-                <div class="g_id_signin" 
-                     data-type="icon" 
-                     data-shape="circle" 
-                     data-theme="outline" 
-                     data-size="large">
+            <!-- כפתור גוגל (עיצוב מותאם עם Overlay שקוף) -->
+            <div class="sso-circle-btn custom-google-wrapper" title="התחבר עם גוגל">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google">
+                <div class="google-invisible-overlay">
+                    <div class="g_id_signin" 
+                         data-type="icon" 
+                         data-shape="circle" 
+                         data-theme="outline" 
+                         data-size="large">
+                    </div>
                 </div>
             </div>
             
+            <!-- כפתור מיקרוסופט -->
             <a href="/api/auth/microsoft/login" class="sso-circle-btn" title="התחבר עם מיקרוסופט">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg" alt="Microsoft">
             </a>
 
+            <!-- כפתור לינקדאין -->
             <a href="/api/auth/linkedin/login" class="sso-circle-btn" title="התחבר עם לינקדאין">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png" alt="LinkedIn">
             </a>
