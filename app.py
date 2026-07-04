@@ -270,7 +270,7 @@ def register():
         db.session.add(new_dog)
         db.session.commit()
     
-    body = f"היי {first_name} ו{dog_name}!\n\nברוכים הבאים ל-DogOps, מערכת האילוף והמעקב המובילה בענן.\nשמחים שהצטרפתם לקהילה שלנו!\n\nלנוחיותך, להלן פרטי ההתחברות למערכת:\nשם משתמש: {email}\nסיסמה: {password}\n\nבהצלחה באילוף,\nצוות DogOps 🐾"
+    body = f"היי {first_name} ו{dog_name}!\n\nברוכים הבאים ל-DogOps, מערכת האילוף והמעקב המובילה בענן.\nשמחים שהצטרפתם לקהילה שלנו!\n\nלנוחיותך, להלן פרטי ההתחברות למערכת:\nשם משתמש: <span dir=\"ltr\">{email}</span>\nסיסמה: <span dir=\"ltr\">{password}</span>\n\nבהצלחה באילוף,\nצוות DogOps 🐾"
     send_dogops_email(email, "ברוכים הבאים ל-DogOps! 🐾", "איזה כיף שהצטרפת!", body)
 
     # עדכון מד-החום כלפי מעלה כשנוצר כלב חדש
