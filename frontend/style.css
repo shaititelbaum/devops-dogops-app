@@ -1497,15 +1497,6 @@ li {
     margin-bottom: 20px;
 }
 
-/* שומר על גוגל בגודל מדויק בלי להימתח */
-.sso-wrap {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
 .sso-circle-btn {
     width: 42px !important; /* הגדלנו ב-2 פיקסלים כדי להכיל את גוגל בנוחות */
     height: 42px !important;
@@ -1546,4 +1537,30 @@ li {
 
 .sso-circle-btn:hover img {
     transform: scale(1.15); 
+}
+
+/* ==========================================
+   התאמה מיוחדת לכפתור גוגל (Invisible Overlay Hack)
+   ========================================== */
+.custom-google-wrapper {
+    position: relative !important;
+}
+
+.google-invisible-overlay {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0 !important; /* הופך את הכפתור הרשמי של גוגל לבלתי נראה */
+    z-index: 10 !important; /* מוודא שהלחיצה תפגע בו ולא בתמונה שמתחתיו */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+/* מתיחה קלה של ה-iframe של גוגל כדי שיכסה את כל ה-42 פיקסלים הלחיצים שלנו */
+.google-invisible-overlay .g_id_signin {
+    transform: scale(1.1);
 }

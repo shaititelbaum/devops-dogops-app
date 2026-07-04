@@ -158,7 +158,7 @@ def send_dogops_email(to_email, subject, title, body_text):
 
     msg = MIMEMultipart('related')
     # 👇 כאן הוספנו את תגית הסלוגן המלאה
-    msg['From'] = f"DogOps עתיד האילוף <{smtp_user}>"
+    msg['From'] = f"DogOps <{smtp_user}>"
     msg['To'] = to_email
     msg['Subject'] = subject
 
