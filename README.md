@@ -33,29 +33,73 @@ DogOps is built using modern cloud-native principles:
 
 ---
 
-## 📁 Repository Structure & Deep Dive
+## 🌳 Complete Repository Tree
 
-Here is a breakdown of the critical files and directories inside this repository:
+```text
+📦 devops-dogops-app
+ ┣ 📂 .github
+ ┃ ┗ 📂 workflows
+ ┃ ┃ ┗ 📜 app-ci.yaml
+ ┣ 📂 charts
+ ┃ ┣ 📂 backend
+ ┃ ┣ 📂 frontend
+ ┃ ┗ 📂 postgres
+ ┣ 📂 frontend
+ ┃ ┣ 📂 assets
+ ┃ ┃ ┣ 🎵 dog-clicker.mp3
+ ┃ ┃ ┣ 🎵 oops.mp3
+ ┃ ┃ ┗ 🖼️ dogsmailpic.png
+ ┃ ┣ 📜 Dockerfile
+ ┃ ┣ 📜 index.html
+ ┃ ┗ 📜 style.css
+ ┣ 📜 Dockerfile
+ ┣ 📜 README.md
+ ┣ 📜 antigravity.md
+ ┣ 📜 app.py
+ ┣ 📜 docker-compose.yaml
+ ┣ 📜 git-clean.sh
+ ┗ 📜 requirements.txt
+```
 
-### 1. `app.py`
-The monolithic API entrypoint. It handles everything from database connections (`SQLAlchemy`), JWT token generation (`flask_jwt_extended`), AI model prompting (`google.generativeai`), to exposing Prometheus metrics.
+---
 
-### 2. `/frontend/`
-Contains the entire UI stack. 
-* `index.html`: The main dashboard featuring dynamic modals, weather widgets, and the AI chat interface.
-* `style.css`: Implements the premium Glassmorphism design system, including frosted glass panels, modern gradients, and smooth hover animations.
-* `assets/`: Contains critical brand assets like `dogsmailpic.png` used for inline email branding.
+## 🔍 Deep-Dive Technical Specification
 
-### 3. `/charts/`
-The Kubernetes packaging directory.
-* `backend/`: Helm chart containing Deployments, Services, and Ingress routes for the Python API.
-* `frontend/`: Helm chart for serving the UI.
-* `postgres/`: Helm chart for deploying the persistent database layer with StatefulSets and PVCs.
+The following is an exhaustive file-by-file breakdown of the core systems that power DogOps.
 
-### 4. `.github/workflows/app-ci.yaml`
-The backbone of our automated CI/CD pipeline. 
-* **Build & Push**: Triggers on every push to `master`. It builds the multi-stage Docker image and pushes it to an AWS ECR registry, tagged with the exact Git SHA.
-* **GitOps Trigger**: Automatically connects to the `devops-dogops-gitops` repository and makes a `[skip ci]` commit to update the Helm `values.yaml` with the new image tag, triggering an ArgoCD sync.
+### 🐍 `app.py` - The Monolithic Core (946 Lines of Code)
+The backend is a robust Python 3.11 Flask application that consolidates multiple complex systems:
+
+#### 🗄️ Relational Data Models (SQLAlchemy)
+* **`User` Table**: Stores core identity. Includes critical security columns like `reset_code_expiry`, `last_password_change`, and `auth_provider` (`local`, `google`, `linkedin`, `microsoft`).
+* **`PasswordHistory` Table**: A security table mapping `user_id` to `password_hash` to ensure users cannot recycle their last 3 passwords.
+* **`DogProfile` Table**: Captures detailed canine metrics (`breed`, `dob`, `gender`, `status`, `chip`, `allergies`) along with the AWS S3 `image_url`.
+* **`Todo` Table**: Represents the core "behavior log" allowing trainers to document specific events (Good/Bad), prioritize them (קל, בינוני, חשוב), and attach GPS links.
+* **`Vaccine` Table**: Medical tracking for 6 primary vaccine types (משושה, כלבת, תולעת הפארק, etc.) including `expiry_date`.
+* **`Summary` Table**: Stores AI-generated daily summaries (`is_auto=True`) of the dog's performance.
+
+#### 🔐 SSO Authentication Flows
+* **Google SSO**: Validates `Credential` tokens locally against the Google OAuth library (`id_token.verify_oauth2_token`).
+* **LinkedIn & Microsoft**: Uses a robust redirect-and-callback flow. It requests an `authorization_code`, exchanges it for an `access_token` via `requests.post`, and pulls profile data dynamically from OpenID endpoints (`graph.microsoft.com` or `api.linkedin.com`).
+
+#### ☁️ AWS S3 Garbage Collection
+The `/api/profile/image` route uses `boto3`. Before uploading a new profile picture, the code uses `s3_client.list_objects_v2` with the `Prefix=user_{id}_profile` to discover old profile images and explicitly runs `delete_objects` to prevent storage bloat.
+
+### 🎨 `frontend/index.html` & `style.css` - The UI Experience (2,182 Lines of Code)
+The frontend is a colossal Single Page Application utilizing cutting-edge web APIs.
+
+* **Audio Context API**: Preloads `dog-clicker.mp3` and `oops.mp3` utilizing `<audio preload="auto">` to provide instantaneous auditory feedback when a trainer logs a "Good Dog" or "Oops" event.
+* **Glassmorphism Design (`style.css`)**: Built entirely without frameworks. Uses highly specific CSS properties (`backdrop-filter: blur(10px)`, `background: rgba(255,255,255,0.1)`, `box-shadow`) to create stunning, frosted-glass modals layered over a dynamic gradient background.
+* **Dynamic Modals & DOM Manipulation**: The 2000+ line `index.html` orchestrates seamless tab switching (`dashboard`, `weather`, `mydog`, `history`, `vaccines`, `summaries`, `settings`) dynamically hiding and showing divs without a single page reload.
+* **Complex Deletion Logic**: Features a highly guarded "Account Deletion" mechanism in the `settings-section`, requiring the user to re-enter their password and pass through two distinct, red-colored warning steps before executing the permanent `DELETE /api/account` call.
+
+### ⚙️ `.github/workflows/app-ci.yaml` - The CI/CD Pipeline (158 Lines)
+This is not a simple build script. It is an advanced, dual-image, GitOps-triggering pipeline.
+
+* **Linting & Verification**: Uses `pylint --errors-only .` to enforce Python best practices before any build begins.
+* **Dual Parallel Builds**: The pipeline is split into `build-and-test` (for Python) and `build-and-push-frontend` (for the UI).
+* **Dynamic Tagging Logic**: Uses GitHub Context conditionals. If it's a tag (`v*.*.*`), it uses the version string. If it's `master`, it prepends `staging-`. If it's a feature branch, it prepends `test-`.
+* **The GitOps `yq` Injection**: For both the backend and frontend jobs, the script explicitly clones the `devops-dogops-gitops` repository. It uses `yq` to precisely patch either `.backend.imageTag` or `.frontend.imageTag` within `environments/values-{env}.yaml`, sets the `[skip ci]` commit flag, and pushes it back to master. This securely delegates the actual deployment phase to ArgoCD.
 
 ---
 
@@ -65,7 +109,7 @@ This application doesn't just log—it provides deep mathematical insights into 
 
 * 🟢 **`dogops_active_profiles` (Gauge)**: Tracks the real-time number of dog profiles registered in the system.
 * 📈 **`dogops_behavior_events_total` (Counter)**: Tracks behavioral reports logged by trainers.
-* ⏱️ **`dogops_ai_response_seconds` (Histogram)**: Measures the exact latency of the Gemini AI model to ensure trainers aren't waiting too long for advice.
+* ⏱️ **`dogops_ai_response_seconds` (Histogram)**: Measures the exact latency of the Gemini AI model (`buckets=(0.5, 1.0, 2.0, 3.0, 5.0, inf)`) to ensure trainers aren't waiting too long for advice.
 * ⏱️ **`dogops_s3_upload_seconds` (Histogram)**: Tracks the network latency when uploading profile pictures to AWS S3.
 * 🚨 **`dogops_login_failures_total` (Counter)**: Security metric that tracks failed authentication attempts to trigger automated brute-force alerts in Grafana.
 
@@ -77,7 +121,7 @@ Want to run DogOps locally? Follow these steps:
 
 ### Prerequisites
 * Python 3.11+
-* Docker Desktop
+* Docker Desktop & Docker Compose (`docker-compose.yaml` handles local orchestration)
 * AWS CLI (configured with appropriate S3 permissions)
 * API Keys for Google (SSO), Microsoft (SSO), LinkedIn (SSO), and Gemini AI.
 
@@ -98,16 +142,12 @@ Want to run DogOps locally? Follow these steps:
    flask run --host=0.0.0.0 --port=5000
    ```
 
-### Running via Docker
+### Running via Docker Compose
 
 To simulate the exact production environment locally:
 
 ```bash
-docker build -t dogops-app:latest .
-docker run -p 5000:5000 \
-  -e AWS_REGION=us-east-1 \
-  -e GOOGLE_API_KEY="your_gemini_key" \
-  dogops-app:latest
+docker-compose up --build -d
 ```
 
 ---
