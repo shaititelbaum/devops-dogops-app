@@ -1507,20 +1507,26 @@ li {
 }
 
 .sso-circle-btn {
-    width: 40px !important;
-    height: 40px !important;
-    min-width: 40px !important; /* חוסם מתיחה של flex */
+    width: 42px !important; /* הגדלנו ב-2 פיקסלים כדי להכיל את גוגל בנוחות */
+    height: 42px !important;
+    min-width: 42px !important;
     border-radius: 50% !important;
-    background-color: #ffffff !important;
-    border: 1px solid #dadce0 !important;
+    
+    /* אפקט זכוכית (Glassmorphism) */
+    background: rgba(255, 255, 255, 0.15) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     cursor: pointer;
-    text-decoration: none !important; /* מבטל קו תחתון של קישורים */
+    text-decoration: none !important;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
     padding: 0 !important;
     box-sizing: border-box !important;
+    overflow: hidden !important; /* מוודא שגוגל לא פורץ החוצה */
 }
 
 .sso-circle-btn img {
@@ -1530,9 +1536,10 @@ li {
     transition: transform 0.4s ease;
 }
 
+/* אפקט הריחוף - טיפה יותר בוהק בשקיפות */
 .sso-circle-btn:hover {
-    background-color: #f0fdfa !important; 
-    border-color: #14b8a6 !important; 
+    background: rgba(255, 255, 255, 0.3) !important; 
+    border-color: rgba(20, 184, 166, 0.8) !important; 
     box-shadow: 0 0 12px rgba(20, 184, 166, 0.4) !important; 
     transform: translateY(-3px); 
 }

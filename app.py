@@ -158,7 +158,7 @@ def send_dogops_email(to_email, subject, title, body_text):
 
     msg = MIMEMultipart('related')
     # 👇 כאן הוספנו את תגית הסלוגן המלאה
-    msg['From'] = f'"DogOps עתיד האילוף" <{smtp_user}>'
+    msg['From'] = f"DogOps עתיד האילוף <{smtp_user}>"
     msg['To'] = to_email
     msg['Subject'] = subject
 
@@ -270,7 +270,7 @@ def register():
         db.session.add(new_dog)
         db.session.commit()
     
-    body = f"אהלן {first_name} ו-{dog_name}!\n\nברוכים הבאים ל-DogOps, מערכת האילוף והמעקב המובילה בענן.\nשמחים שהצטרפתם לקהילה שלנו!\n\nבהצלחה באילוף,\nצוות DogOps 🐾"
+    body = f"היי {first_name} ו{dog_name}!\n\nברוכים הבאים ל-DogOps, מערכת האילוף והמעקב המובילה בענן.\nשמחים שהצטרפתם לקהילה שלנו!\n\nלנוחיותך, להלן פרטי ההתחברות למערכת:\nשם משתמש: {email}\nסיסמה: {password}\n\nבהצלחה באילוף,\nצוות DogOps 🐾"
     send_dogops_email(email, "ברוכים הבאים ל-DogOps! 🐾", "איזה כיף שהצטרפת!", body)
 
     # עדכון מד-החום כלפי מעלה כשנוצר כלב חדש
