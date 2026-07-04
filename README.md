@@ -1,32 +1,41 @@
-# DevOps Todo Application
+# 🐾 DogOps - Application Repository
 
-This repository contains the multi-tier DevOps Todo application and its deployment configurations.
+![Build Status](https://img.shields.io/badge/build-passing-brightgreen) ![Python](https://img.shields.io/badge/python-3.9+-blue.svg) ![Docker](https://img.shields.io/badge/docker-ready-blue) ![Helm](https://img.shields.io/badge/helm-packaged-informational)
 
-## Local Deployment & Validation (Step 3)
+Welcome to the **DogOps Application**! This is the core microservice repository containing the backend API, the frontend UI, and the Kubernetes Helm charts used to deploy the application.
 
-The Helm chart has been successfully validated and deployed locally inside a Kubernetes cluster using Docker Desktop.
+## 🏗 Architecture
+* **Backend**: Python-based API handling core business logic, SSO authentication (Google, LinkedIn), and S3 profile image uploads.
+* **Frontend**: Modern, responsive UI featuring Glassmorphism design principles, dynamic transitions, and RTL (Right-to-Left) rendering support for emails.
+* **Database**: Integrates with PostgreSQL.
+* **Secrets**: Integrates with AWS Secrets Manager via External Secrets Operator (ESO) for API keys, SMTP, and DB credentials.
 
-### Prerequisites
-* Docker Desktop with Kubernetes enabled
-* Helm CLI installed
-* AWS CLI configured with active permissions to ECR
+## 📁 Repository Structure
+* `/app.py`: Main application entrypoint.
+* `/frontend/`: Contains all HTML, CSS, and UI assets.
+* `/Dockerfile`: Multi-stage, optimized container build.
+* `/charts/`: Helm charts for packaging the application.
+* `/requirements.txt`: Python dependencies.
 
-### Deployment Steps
+## 🚀 Local Development
+1. **Prerequisites**:
+   - Docker Desktop with Kubernetes enabled.
+   - Helm CLI.
+   - AWS CLI configured with ECR permissions.
 
-1. **Create the ECR Image Pull Secret**
-   Since the backend image is hosted in a private AWS ECR repository, we inject a temporary authentication token into the cluster so Kubernetes can pull the container:
+2. **Running Locally**:
    ```bash
-   kubectl create secret docker-registry ecr-registry-secret \
-     --docker-server=480891637713.dkr.ecr.us-east-1.amazonaws.com \
-     --docker-username=AWS \
-     --docker-password=$(aws ecr get-login-password --region us-east-1)
+   docker build -t dogops-app:local .
+   docker run -p 8080:8080 dogops-app:local
+   ```
 
-2. **Deploy the Application via Helm**
-   To avoid using the latest tag (which is bad practice in Production) and maintain immutability, we dynamically inject the specific Git Commit SHA tag during deployment using the --set flag:
+3. **Helm Validation**:
    ```bash
-     helm install devops-dogops-backend ./devops-dogops-backend-chart --set image.tag="6f68088d2e50695cf267217aedeb872d5fecbee4"
+   helm lint ./charts/devops-dogops-backend-chart
+   ```
 
-3. **Verify Deployment Status**
-   Check that the Pod has successfully pulled the image and transitioned into a Running state:
-   ```bash
-     kubectl get pods
+## 🔄 Deployment Pipeline
+This application is strictly deployed using GitOps. **Never use the `latest` image tag.**
+1. Code pushed to `master` triggers a GitHub Action.
+2. The Action builds a new Docker image, tags it with the Git SHA, and pushes to AWS ECR.
+3. The pipeline automatically makes a `[skip ci]` commit to the `devops-dogops-gitops` repository to trigger ArgoCD.

@@ -35,3 +35,6 @@
    - Never push directly to main/master.
    - **Post-Push Action**: After pushing a branch, automatically run `git checkout master` and `git pull`.
    - **Cleanup**: When a PR is closed/merged, clean up branches locally and remotely. You can execute `~/github-projects/devops-dogops-app/git-clean.sh` to safely prune all 3 repositories simultaneously.
+7. **Documentation**:
+   - Whenever adding a new feature or making architectural changes, you MUST update the `README.md`.
+   - **Crucial**: Always present the `README.md` changes to the user for review before confirming or pushing.
