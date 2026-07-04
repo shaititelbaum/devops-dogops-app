@@ -115,6 +115,28 @@ spec:
                 secretKeyRef:
                   name: openweather-secret
                   key: OPENWEATHER_API_KEY
+            # הזרקת משתני Microsoft SSO
+            - name: MICROSOFT_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: microsoft-oauth-secret
+                  key: MICROSOFT_CLIENT_ID
+            - name: MICROSOFT_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: microsoft-oauth-secret
+                  key: MICROSOFT_CLIENT_SECRET
+            # הזרקת משתני LinkedIn SSO
+            - name: LINKEDIN_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: linkedin-oauth-secret
+                  key: LINKEDIN_CLIENT_ID
+            - name: LINKEDIN_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: linkedin-oauth-secret
+                  key: LINKEDIN_CLIENT_SECRET
           # ----------------------------------------------------------------------------------
 
           {{- with .Values.livenessProbe }}

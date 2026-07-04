@@ -49,17 +49,37 @@
                  data-size="large">
             </div>
             
-            <button type="button" class="sso-circle-btn" onclick="alert('בקרוב: התחברות עם מיקרוסופט יעבוד אחרי שנביא מפתח!')" title="התחבר עם מיקרוסופט">
+            <button type="button" class="sso-circle-btn" onclick="window.location.href='/api/auth/microsoft/login'" title="התחבר עם מיקרוסופט">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg" alt="Microsoft">
             </button>
 
-            <button type="button" class="sso-circle-btn" onclick="alert('בקרוב: התחברות עם לינקדאין יעבוד אחרי שנביא מפתח!')" title="התחבר עם לינקדאין">
+            <button type="button" class="sso-circle-btn" onclick="window.location.href='/api/auth/linkedin/login'" title="התחבר עם לינקדאין">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png" alt="LinkedIn">
             </button>
 
         </div>
 
             <script>
+            
+            window.onload = function() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const token = urlParams.get('token');
+                
+                // אם זוהה טוקן של מיקרוסופט או לינקדאין בשורת הכתובת
+                if (token) {
+                    // שמירת הטוקן בדפדפן (כפי שהמערכת שלך עובדת)
+                    localStorage.setItem('access_token', token); 
+                    
+                    // ניקוי שורת הכתובת כדי שהמשתמש לא יראה את הטוקן הארוך
+                    window.history.replaceState({}, document.title, "/");
+                    
+                    // הסתרת מסכי ההתחברות והצגת המערכת
+                    document.getElementById('login-container').style.display = 'none';
+                    // אם יש לך פונקציה מסודרת שמפעילה את הדשבורד (כמו showSection('dashboard')), קרא לה כאן!
+                    // showSection('dashboard');
+                }
+            };
+            
             function handleGoogleLogin(response) {
                 // שליחת הטוקן שגוגל הנפיקה ל-Backend שלנו
                 fetch('/api/auth/google', {
