@@ -12,6 +12,7 @@ from email.mime.image import MIMEImage  # 👈 הוסף את השורה הזו
 from datetime import datetime, timedelta
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask import redirect
 
 
 # ייבוא ספריות ה-DB והאבטחה
@@ -436,6 +437,154 @@ def delete_account():
     DOG_PROFILES_GAUGE.dec()
 
     return jsonify({"message": "החשבון נמחק לצמיתות"}), 200
+
+
+# ==========================================
+# Routes: LinkedIn SSO
+# ==========================================
+LINKEDIN_CLIENT_ID = os.getenv("LINKEDIN_CLIENT_ID", "ה-CLIENT_ID_מלינקדאין")
+LINKEDIN_CLIENT_SECRET = os.getenv("LINKEDIN_CLIENT_SECRET", "ה-SECRET_מלינקדאין")
+LINKEDIN_REDIRECT_URI = os.getenv("LINKEDIN_REDIRECT_URI", "http://localhost:8080/api/auth/linkedin/callback")
+
+@app.route('/api/auth/linkedin/login')
+def linkedin_login():
+    # מפנה את המשתמש לדף ההתחברות הרשמי של לינקדאין
+    linkedin_auth_url = (
+        f"https://www.linkedin.com/oauth/v2/authorization?"
+        f"response_type=code&"
+        f"client_id={LINKEDIN_CLIENT_ID}&"
+        f"redirect_uri={LINKEDIN_REDIRECT_URI}&"
+        f"scope=openid%20profile%20email"
+    )
+    return redirect(linkedin_auth_url)
+
+@app.route('/api/auth/linkedin/callback')
+def linkedin_callback():
+    code = request.args.get('code')
+    if not code:
+        return jsonify({"error": "לא התקבל קוד אימות מלינקדאין"}), 400
+
+    # המרת הקוד לטוקן גישה מול השרתים של לינקדאין
+    token_url = "https://www.linkedin.com/oauth/v2/accessToken"
+    token_data = {
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": LINKEDIN_REDIRECT_URI,
+        "client_id": LINKEDIN_CLIENT_ID,
+        "client_secret": LINKEDIN_CLIENT_SECRET
+    }
+    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+    token_r = requests.post(token_url, data=token_data, headers=headers)
+    token_json = token_r.json()
+    access_token = token_json.get("access_token")
+
+    if not access_token:
+        return jsonify({"error": "שגיאה במשיכת טוקן מלינקדאין", "details": token_json}), 400
+
+    # משיכת פרופיל המשתמש דרך פרוטוקול OpenID של לינקדאין
+    userinfo_url = "https://api.linkedin.com/v2/userinfo"
+    userinfo_headers = {"Authorization": f"Bearer {access_token}"}
+    userinfo_r = requests.get(userinfo_url, headers=userinfo_headers)
+    user_info = userinfo_r.json()
+
+    email = user_info.get("email")
+    if not email:
+        return jsonify({"error": "לא ניתן לקרוא את כתובת האימייל מהפרופיל"}), 400
+
+    first_name = user_info.get("given_name", "")
+    last_name = user_info.get("family_name", "")
+
+    # לוגיקת התחברות או יצירת משתמש במערכת שלנו
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        user = User(email=email, password_hash="LINKEDIN_SSO_USER", first_name=first_name, last_name=last_name)
+        db.session.add(user)
+        db.session.commit()
+        
+        # יצירת פרופיל כלב ריק למשתמש חדש
+        new_dog = DogProfile(user_id=user.id, name="כלב חדש")
+        db.session.add(new_dog)
+        db.session.commit()
+
+    # יצירת הטוקן הפנימי של המערכת שלנו והפניה חזרה לפרונט-אנד
+    jwt_token = create_access_token(identity=str(user.id))
+    return redirect(f"/?token={jwt_token}")
+
+
+# ==========================================
+# Routes: Microsoft SSO
+# ==========================================
+MS_CLIENT_ID = os.getenv("MICROSOFT_CLIENT_ID", "ה-CLIENT_ID_ממיקרוסופט")
+MS_CLIENT_SECRET = os.getenv("MICROSOFT_CLIENT_SECRET", "ה-SECRET_ממיקרוסופט")
+MS_REDIRECT_URI = os.getenv("MICROSOFT_REDIRECT_URI", "http://localhost:8080/api/auth/microsoft/callback")
+
+@app.route('/api/auth/microsoft/login')
+def microsoft_login():
+    # מפנה את המשתמש לדף ההתחברות הרשמי של מיקרוסופט
+    ms_auth_url = (
+        f"https://login.microsoftonline.com/common/oauth2/v2.0/authorize?"
+        f"client_id={MS_CLIENT_ID}&"
+        f"response_type=code&"
+        f"redirect_uri={MS_REDIRECT_URI}&"
+        f"response_mode=query&"
+        f"scope=openid%20email%20profile%20User.Read"
+    )
+    return redirect(ms_auth_url)
+
+@app.route('/api/auth/microsoft/callback')
+def microsoft_callback():
+    code = request.args.get('code')
+    if not code:
+        return jsonify({"error": "לא התקבל קוד אימות ממיקרוסופט"}), 400
+
+    # המרת הקוד לטוקן גישה מול השרתים של מיקרוסופט
+    token_url = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
+    token_data = {
+        "client_id": MS_CLIENT_ID,
+        "client_secret": MS_CLIENT_SECRET,
+        "code": code,
+        "redirect_uri": MS_REDIRECT_URI,
+        "grant_type": "authorization_code"
+    }
+    token_r = requests.post(token_url, data=token_data)
+    token_json = token_r.json()
+    access_token = token_json.get("access_token")
+
+    if not access_token:
+        return jsonify({"error": "שגיאה במשיכת טוקן הגישה ממיקרוסופט"}), 400
+
+    # משיכת פרופיל המשתמש
+    graph_url = "https://graph.microsoft.com/v1.0/me"
+    headers = {"Authorization": f"Bearer {access_token}"}
+    graph_r = requests.get(graph_url, headers=headers)
+    user_info = graph_r.json()
+
+    # מיקרוסופט יכולה להחזיר את המייל תחת 'mail' או תחת 'userPrincipalName'
+    email = user_info.get("mail") or user_info.get("userPrincipalName")
+    if not email:
+        return jsonify({"error": "לא ניתן לקרוא את כתובת האימייל מהפרופיל"}), 400
+
+    first_name = user_info.get("givenName", "")
+    last_name = user_info.get("surname", "")
+
+    # לוגיקת התחברות או יצירת משתמש (בדיוק כמו בגוגל)
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        user = User(email=email, password_hash="MICROSOFT_SSO_USER", first_name=first_name, last_name=last_name)
+        db.session.add(user)
+        db.session.commit()
+        
+        # יצירת פרופיל כלב ריק למשתמש חדש
+        new_dog = DogProfile(user_id=user.id, name="כלב חדש")
+        db.session.add(new_dog)
+        db.session.commit()
+
+    # יצירת הטוקן הפנימי של המערכת שלנו
+    jwt_token = create_access_token(identity=str(user.id))
+    
+    # הפניה חזרה לעמוד הראשי של האפליקציה יחד עם הטוקן ב-URL כדי שהפרונט-אנד יוכל לשמור אותו
+    return redirect(f"/?token={jwt_token}")
+
 
 
 @app.route('/api/auth/google', methods=['POST'])
