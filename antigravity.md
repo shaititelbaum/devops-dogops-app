@@ -30,7 +30,7 @@
    - Encourage writing unit tests for new backend logic.
    - Ensure changes pass local validation before pushing.
 6. **Git Workflow**:
-   - Always create a new branch for changes.
+   - **CRITICAL**: NEVER commit or push straight to the master/main branch. Always use feature branches.
    - **Review First**: ALWAYS present the code changes to the user for review before committing or pushing.
    - **Manual Push Trigger**: DO NOT automatically push. Only push when the user explicitly commands you to push.
    - **Pre-Push Sync**: Always run `git pull` on the branch before pushing to avoid conflicts.
