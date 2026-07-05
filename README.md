@@ -29,7 +29,7 @@ DogOps is built using modern cloud-native principles:
 1. **Backend (Python / Flask)**: Provides a lightning-fast RESTful API. It utilizes `SQLAlchemy` as the ORM, seamlessly supporting both SQLite (for local dev) and PostgreSQL (for production).
 2. **Frontend (Vanilla HTML/CSS/JS)**: A single-page application (SPA) featuring stunning **Glassmorphism** aesthetics. It includes responsive design, RTL (Right-to-Left) Hebrew support, and highly dynamic UI transitions.
 3. **Containerization**: A highly optimized, multi-stage `Dockerfile` running Python 3.11-slim, ensuring minimal image size and attack surface.
-4. **Kubernetes Native (Helm)**: The application is split into three independent Helm charts (`backend`, `frontend`, `postgres`) allowing for granular scaling and lifecycle management via GitOps.
+4. **Kubernetes Native (Helm)**: The application is packaged into a unified **Umbrella Chart** (`dogops-umbrella`) which manages the `backend`, `frontend`, and `postgres` sub-charts, allowing for atomic, cohesive deployments via GitOps.
 
 ---
 
@@ -93,13 +93,12 @@ The frontend is a colossal Single Page Application utilizing cutting-edge web AP
 * **Dynamic Modals & DOM Manipulation**: The 2000+ line `index.html` orchestrates seamless tab switching (`dashboard`, `weather`, `mydog`, `history`, `vaccines`, `summaries`, `settings`) dynamically hiding and showing divs without a single page reload.
 * **Complex Deletion Logic**: Features a highly guarded "Account Deletion" mechanism in the `settings-section`, requiring the user to re-enter their password and pass through two distinct, red-colored warning steps before executing the permanent `DELETE /api/account` call.
 
-### ⚙️ `.github/workflows/app-ci.yaml` - The CI/CD Pipeline (158 Lines)
-This is not a simple build script. It is an advanced, dual-image, GitOps-triggering pipeline.
+### ⚙️ `.github/workflows/app-ci.yaml` - The CI/CD Pipeline
+This is not a simple build script. It is an advanced, dual-image, GitOps-triggering pipeline using **Reusable Composite Actions**.
 
-* **Linting & Verification**: Uses `pylint --errors-only .` to enforce Python best practices before any build begins.
-* **Dual Parallel Builds**: The pipeline is split into `build-and-test` (for Python) and `build-and-push-frontend` (for the UI).
-* **Dynamic Tagging Logic**: Uses GitHub Context conditionals. If it's a tag (`v*.*.*`), it uses the version string. If it's `master`, it prepends `staging-`. If it's a feature branch, it prepends `test-`.
-* **The GitOps `yq` Injection**: For both the backend and frontend jobs, the script explicitly clones the `devops-dogops-gitops` repository. It uses `yq` to precisely patch either `.backend.imageTag` or `.frontend.imageTag` within `environments/values-{env}.yaml`, sets the `[skip ci]` commit flag, and pushes it back to master. This securely delegates the actual deployment phase to ArgoCD.
+* **GitHub Composite Action (`deploy-ecr-gitops`)**: To keep the pipeline strictly DRY, all Docker build, ECR push, and GitOps YAML patching logic is encapsulated in a reusable custom action.
+* **Dual Parallel Builds**: The pipeline simultaneously processes the `backend` and `frontend` using the reusable action.
+* **Umbrella Chart GitOps**: The pipeline dynamically builds images based on branch tags (e.g. `test-`, `staging-`) and uses `yq` to precisely patch the image tags within the `dogops-umbrella` values file in the GitOps repository. This securely delegates the actual deployment phase to ArgoCD.
 
 ---
 
