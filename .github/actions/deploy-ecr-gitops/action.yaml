@@ -1,0 +1,78 @@
+name: "Deploy to ECR and GitOps"
+description: "Builds docker image, pushes to ECR, and updates GitOps repo"
+
+inputs:
+  app_name:
+    description: "Name of the app (backend or frontend)"
+    required: true
+  docker_path:
+    description: "Path to the Dockerfile context"
+    required: true
+  aws_access_key_id:
+    description: "AWS Access Key ID"
+    required: true
+  aws_secret_access_key:
+    description: "AWS Secret Access Key"
+    required: true
+  gitops_token:
+    description: "GitHub Token for GitOps repo"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ inputs.aws_access_key_id }}
+        aws-secret-access-key: ${{ inputs.aws_secret_access_key }}
+        aws-region: us-east-1
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Build, tag, and push image to Amazon ECR
+      id: build-image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: devops-dogops-${{ inputs.app_name }}
+      run: |
+        if [ "${{ startsWith(github.ref, 'refs/tags/v') }}" = "true" ]; then
+          IMAGE_TAG="${{ github.ref_name }}"
+        elif [ "${{ github.ref }}" = "refs/heads/master" ]; then
+          IMAGE_TAG="staging-${{ github.sha }}"
+        else
+          IMAGE_TAG="test-${{ github.sha }}"
+        fi
+        
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ${{ inputs.docker_path }}
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Update Tag in GitOps Repo
+      env:
+        GITOPS_TOKEN: ${{ inputs.gitops_token }}
+        IMAGE_TAG: ${{ steps.build-image.outputs.image_tag }}
+      run: |
+        if [ "${{ startsWith(github.ref, 'refs/tags/v') }}" = "true" ]; then
+          ENV_DIR="prod"
+        elif [ "${{ github.ref }}" = "refs/heads/master" ]; then
+          ENV_DIR="staging"
+        else
+          ENV_DIR="test"
+        fi
+        
+        git clone https://x-access-token:${GITOPS_TOKEN}@github.com/shaititelbaum/devops-dogops-gitops.git gitops-repo
+        cd gitops-repo
+        
+        yq -i ".${{ inputs.app_name }}.imageTag = \"$IMAGE_TAG\"" environments/values-$ENV_DIR.yaml
+        
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add environments/values-$ENV_DIR.yaml
+        git commit -m "chore(deploy): auto-update ${{ inputs.app_name }} to $IMAGE_TAG in $ENV_DIR [skip ci]" || echo "No changes"
+        git pull --rebase origin master
+        git push origin master
+      shell: bash
