@@ -75,16 +75,18 @@
                 
                 // אם זוהה טוקן של מיקרוסופט או לינקדאין בשורת הכתובת
                 if (token) {
-                    // שמירת הטוקן בדפדפן (כפי שהמערכת שלך עובדת)
-                    localStorage.setItem('access_token', token); 
-                    
-                    // ניקוי שורת הכתובת כדי שהמשתמש לא יראה את הטוקן הארוך
+                    localStorage.setItem('dogOpsToken', token); 
                     window.history.replaceState({}, document.title, "/");
                     
-                    // הסתרת מסכי ההתחברות והצגת המערכת
                     document.getElementById('login-container').style.display = 'none';
-                    // אם יש לך פונקציה מסודרת שמפעילה את הדשבורד (כמו showSection('dashboard')), קרא לה כאן!
-                    // showSection('dashboard');
+                    document.getElementById('main-container').style.display = 'flex';
+                    document.getElementById('logout-btn').style.display = 'block'; 
+                    
+                    trackPawPosition();
+                    loadDogProfile();
+                    initQuickEvents(); 
+                    initAiQuickPrompts();
+                    fetchTodos();
                 }
             };
             
