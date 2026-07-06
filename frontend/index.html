@@ -98,10 +98,17 @@
                 .then(res => res.json())
                 .then(data => {
                     if(data.access_token) {
-                        // שמירת הטוקן שלנו והעברת המשתמש פנימה!
-                        localStorage.setItem('token', data.access_token);
+                        localStorage.setItem('dogOpsToken', data.access_token);
                         alert("התחברת בהצלחה עם Google!");
-                        // כאן תוסיף את הקריאה להעלמת טופס ההתחברות והצגת האפליקציה
+                        document.getElementById('login-container').style.display = 'none';
+                        document.getElementById('main-container').style.display = 'flex';
+                        document.getElementById('logout-btn').style.display = 'block'; 
+                        
+                        trackPawPosition();
+                        loadDogProfile();
+                        initQuickEvents(); 
+                        initAiQuickPrompts();
+                        fetchTodos();
                     } else {
                         alert('שגיאה באימות מול השרת');
                     }
