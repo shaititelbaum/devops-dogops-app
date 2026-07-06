@@ -138,10 +138,14 @@ spec:
                   name: linkedin-oauth-secret
                   key: LINKEDIN_CLIENT_SECRET
             # הגדרות ניתוב Cloud First עבור ה-SSO
+            {{- $ingressHost := "dogops.co" }}
+            {{- if and .Values.ingress.enabled (gt (len .Values.ingress.hosts) 0) }}
+            {{- $ingressHost = (index .Values.ingress.hosts 0).host }}
+            {{- end }}
             - name: MICROSOFT_REDIRECT_URI
-              value: "https://dogops.co/api/auth/microsoft/callback"
+              value: "https://{{ $ingressHost }}/api/auth/microsoft/callback"
             - name: LINKEDIN_REDIRECT_URI
-              value: "https://dogops.co/api/auth/linkedin/callback"
+              value: "https://{{ $ingressHost }}/api/auth/linkedin/callback"
           # ----------------------------------------------------------------------------------
 
           {{- with .Values.livenessProbe }}
