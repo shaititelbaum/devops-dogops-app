@@ -660,6 +660,8 @@ def dog_profile():
             if 'owner_last_name' in data:
                 user.last_name = data['owner_last_name']
         
+        was_new = (profile.name == "כלב חדש")
+        
         profile.name = data.get('name', profile.name)
         profile.breed = data.get('breed', profile.breed)
         profile.city = data.get('city', profile.city)
@@ -671,6 +673,12 @@ def dog_profile():
         profile.allergies = data.get('allergies', profile.allergies)
         
         db.session.commit()
+        
+        if was_new and user and user.auth_provider in ['google', 'microsoft', 'linkedin']:
+            provider_name = user.auth_provider.capitalize()
+            body = f"היי {user.first_name} ו{profile.name}!\n\nברוכים הבאים ל-DogOps, מערכת האילוף והמעקב המובילה בענן.\nשמחים שהצטרפתם לקהילה שלנו!\n\nהתחברתם בהצלחה באמצעות חשבון ה-{provider_name} שלכם.\n\nבהצלחה באילוף,\nצוות DogOps 🐾"
+            send_dogops_email(user.email, "ברוכים הבאים ל-DogOps! 🐾", "איזה כיף שהצטרפת!", body)
+            
         return jsonify({"message": "Profile updated successfully"}), 200
 
 @app.route('/api/profile/image', methods=['POST'])
