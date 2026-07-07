@@ -105,7 +105,10 @@
                         alert('שגיאה באימות מול השרת');
                     }
                 })
-                .catch(err => console.error("Error:", err));
+                .catch(err => {
+                    console.error("Error:", err);
+                    alert("שגיאה בתקשורת עם השרת בזמן התחברות לגוגל.");
+                });
             }
             </script>
                 
@@ -1577,7 +1580,10 @@ async function addDogEvent(type) {
 
         async function loadDogProfile() {
     try {
-        const response = await fetch('/api/profile', { headers: getAuthHeaders() });
+        const response = await fetch('/api/profile', { 
+            headers: getAuthHeaders(),
+            cache: 'no-store' 
+        });
         if (response.ok) {
             const profile = await response.json();
             console.log("Profile Data:", profile); // 👈 תוסיף את זה
