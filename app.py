@@ -640,7 +640,8 @@ def dog_profile():
         if not profile:
             return jsonify({
                 "owner_first_name": user.first_name if user else "",
-                "owner_last_name": user.last_name if user else ""
+                "owner_last_name": user.last_name if user else "",
+                "auth_provider": user.auth_provider if user else "local"
             }), 200
         return jsonify({
             "owner_first_name": user.first_name if user else "",
@@ -648,7 +649,8 @@ def dog_profile():
             "name": profile.name, "breed": profile.breed, "city": profile.city,
             "dob": profile.dob, "gender": profile.gender, "status": profile.status,
             "weight": profile.weight, "chip": profile.chip, "allergies": profile.allergies,
-            "image_url": profile.image_url
+            "image_url": profile.image_url,
+            "auth_provider": user.auth_provider if user else "local"
         }), 200
         
     if request.method == 'PUT':

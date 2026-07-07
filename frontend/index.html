@@ -100,17 +100,7 @@
                 .then(res => res.json())
                 .then(data => {
                     if(data.access_token) {
-                        localStorage.setItem('dogOpsToken', data.access_token);
-                        alert("התחברת בהצלחה עם Google!");
-                        document.getElementById('login-container').style.display = 'none';
-                        document.getElementById('main-container').style.display = 'flex';
-                        document.getElementById('logout-btn').style.display = 'block'; 
-                        
-                        trackPawPosition();
-                        loadDogProfile();
-                        initQuickEvents(); 
-                        initAiQuickPrompts();
-                        fetchTodos();
+                        window.location.href = `/?token=${data.access_token}`;
                     } else {
                         alert('שגיאה באימות מול השרת');
                     }
@@ -524,7 +514,8 @@
                     <div id="settings-delete-step-2" class="hidden" style="margin-top: 10px; background: rgba(220, 38, 38, 0.2); padding: 15px; border-radius: 8px; border: 2px solid #ef4444; text-align: center;">
                         <p style="color: white; font-size: 14px; font-weight: bold; margin-top: 0; margin-bottom: 10px;">🚨 אזהרה אחרונה בהחלט! 🚨</p>
                         <p style="color: #fca5a5; font-size: 12px; margin-bottom: 15px;">הפעולה תמחק את כל המידע והתמונות.<br>לא ניתן לשחזר.</p>
-                        <button class="cancel-btn" onclick="performDeleteAccount()" style="width: 100%; background: #b91c1c; color: white; padding: 12px; font-weight: bold;">מחק את החשבון שלי לתמיד!</button>
+                        <button class="cancel-btn" onclick="performDeleteAccount()" style="width: 100%; background: #b91c1c; color: white; padding: 12px; font-weight: bold; margin-bottom: 10px;">מחק את החשבון שלי לתמיד!</button>
+                        <button class="save-btn" onclick="toggleSettingsDelete()" style="width: 100%; background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: white;">ביטול מחיקה</button>
                     </div>
                 </div>
             </div>
@@ -793,7 +784,14 @@
                 if (response.ok) {
                     alert("✅ החשבון נמחק לצמיתות.\nתודה שהשתמשת ב-DogOps!");
                     performLogout(); 
-                } else alert("❌ " + data.error);
+                } else {
+                    alert("❌ " + data.error);
+                    if (!window.currentUserAuthProvider || window.currentUserAuthProvider === 'local') {
+                        document.getElementById('settings-delete-step-2').classList.add('hidden');
+                        document.getElementById('settings-delete-step-1').classList.remove('hidden');
+                        document.getElementById('set-delete-pass').value = '';
+                    }
+                }
             } catch (e) { alert("שגיאת תקשורת עם השרת."); }
         }
 
