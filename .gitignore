@@ -24,3 +24,7 @@ env/
 
 # Error screenshots
 /errors/
+
+# Helm Dependencies
+charts/**/charts/
+charts/**/Chart.lock
