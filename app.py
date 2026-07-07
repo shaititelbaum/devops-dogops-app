@@ -569,14 +569,12 @@ def microsoft_callback():
     first_name = user_info.get("givenName", "")
     last_name = user_info.get("surname", "")
 
-    # לוגיקת התחברות או יצירת משתמש (בדיוק כמו בגוגל)
-    user = User(email=email, password_hash="LINKEDIN_SSO_USER", first_name=first_name, last_name=last_name, auth_provider="linkedin")
+    user = User.query.filter_by(email=email).first()
     if not user:
-        user = User(email=email, password_hash="MICROSOFT_SSO_USER", first_name=first_name, last_name=last_name)
+        user = User(email=email, password_hash="MICROSOFT_SSO_USER", first_name=first_name, last_name=last_name, auth_provider="microsoft")
         db.session.add(user)
-        db.session.commit()
+        db.session.flush()
         
-        # יצירת פרופיל כלב ריק למשתמש חדש
         new_dog = DogProfile(user_id=user.id, name="כלב חדש")
         db.session.add(new_dog)
         db.session.commit()
@@ -600,14 +598,20 @@ def google_sso():
         idinfo = id_token.verify_oauth2_token(token, google_requests.Request(), GOOGLE_CLIENT_ID)
         
         # 2. שליפת האימייל מהטוקן המאומת
-        email = idinfo['email']
+        email = idinfo.get('email')
+        first_name = idinfo.get('given_name', '')
+        last_name = idinfo.get('family_name', '')
         
-        # 3. בדיקה אם המשתמש קיים ב-DB שלך (התאם את מודל ה-User לשם המודל שלך)
+        # 3. בדיקה אם המשתמש קיים ב-DB שלך
         user = User.query.filter_by(email=email).first()
         if not user:
-            # אם הוא לא קיים, ניצור אותו אוטומטית (בלי סיסמה, כי גוגל מאמת אותו)
-            user = User(email=email, password_hash="GOOGLE_SSO_USER", auth_provider="google")
+            # אם הוא לא קיים, ניצור אותו אוטומטית
+            user = User(email=email, password_hash="GOOGLE_SSO_USER", first_name=first_name, last_name=last_name, auth_provider="google")
             db.session.add(user)
+            db.session.flush()
+            
+            new_dog = DogProfile(user_id=user.id, name="כלב חדש")
+            db.session.add(new_dog)
             db.session.commit()
             
         # 4. הנפקת ה-JWT של המערכת שלך כדי ששאר הראוטים יעבדו!
@@ -650,8 +654,11 @@ def dog_profile():
             db.session.add(profile)
             
         user = User.query.filter_by(id=current_user_id).first()
-        if user and 'owner_first_name' in data:
-            user.first_name = data['owner_first_name']
+        if user:
+            if 'owner_first_name' in data:
+                user.first_name = data['owner_first_name']
+            if 'owner_last_name' in data:
+                user.last_name = data['owner_last_name']
         
         profile.name = data.get('name', profile.name)
         profile.breed = data.get('breed', profile.breed)
