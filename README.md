@@ -19,6 +19,7 @@ The DogOps application is packed with advanced functionalities tailored for cani
 * **🌦️ Smart Weather Training Integration**: Connects to the Open-Meteo API to pull live weather data, intelligently analyzing temperature and wind to warn trainers about asphalt heat, rain, or storms before field sessions.
 * **✉️ Automated SMTP Emailing**: A robust email engine that sends beautifully branded HTML emails (with inline DogOps logos) for registrations, password resets, and account deletions.
 * **🛡️ Security & Rate Limiting**: Employs `flask-limiter` to protect AI routes (5 requests/minute) and tracks login failures to prevent brute force attacks. Implements a strict 90-day password rotation policy and prevents recycling the last 3 passwords.
+* **📊 OpenTelemetry Distributed Tracing**: Fully instrumented Python backend using OpenTelemetry to automatically generate detailed waterfall traces for Flask requests, SQLAlchemy database queries, and external API requests. Traces are exported to Grafana Tempo for deep observability.
 
 ---
 
