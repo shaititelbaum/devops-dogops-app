@@ -2235,11 +2235,14 @@ async function addDogEvent(type) {
         <div class="glass-panel" style="padding: 40px; border-radius: 20px; width: 90%; max-width: 450px; text-align: center; color: white; background: rgba(30, 30, 30, 0.6); border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 15px 35px rgba(0,0,0,0.4);">
             <h2 style="margin-top: 0; color: #7289da; font-size: 28px; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">ברוכים הבאים ל-DogOps! 🐾</h2>
             <p style="margin-bottom: 25px; font-size: 16px; line-height: 1.6; color: #e2e8f0;">נראה שהתחברתם דרך חשבון חיצוני. כדי שנוכל להעניק לכם חוויה אישית ומושלמת, אנא השלימו את הפרטים הבאים:</p>
+            <style>
+                .sso-input::placeholder { color: rgba(255,255,255,0.6); }
+            </style>
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <input type="text" id="sso-owner-first-name" placeholder="שם פרטי" style="flex: 1; padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white; font-size: 16px; font-family: inherit; transition: all 0.3s ease; outline: none;">
-                <input type="text" id="sso-owner-last-name" placeholder="שם משפחה" style="flex: 1; padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white; font-size: 16px; font-family: inherit; transition: all 0.3s ease; outline: none;">
+                <input type="text" id="sso-owner-first-name" class="sso-input" placeholder="שם פרטי" style="flex: 1; padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white; font-size: 16px; font-family: inherit; transition: all 0.3s ease; outline: none;">
+                <input type="text" id="sso-owner-last-name" class="sso-input" placeholder="שם משפחה" style="flex: 1; padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white; font-size: 16px; font-family: inherit; transition: all 0.3s ease; outline: none;">
             </div>
-            <input type="text" id="sso-dog-name" placeholder="איך קוראים לכלב/ה?" style="width: 100%; padding: 14px; margin-bottom: 25px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white; box-sizing: border-box; font-size: 16px; font-family: inherit; transition: all 0.3s ease; outline: none;">
+            <input type="text" id="sso-dog-name" class="sso-input" placeholder="שם הכלב/ה" style="width: 100%; padding: 14px; margin-bottom: 25px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white; box-sizing: border-box; font-size: 16px; font-family: inherit; transition: all 0.3s ease; outline: none;">
             <button onclick="saveSsoProfile()" style="background-color: #7289da; color: white; border: none; padding: 14px 20px; border-radius: 10px; cursor: pointer; width: 100%; font-size: 18px; font-weight: bold; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(114,137,218,0.4);">שמור והמשך למערכת</button>
         </div>
     </div>

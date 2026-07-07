@@ -615,7 +615,7 @@ def google_sso():
             db.session.commit()
             
         # 4. הנפקת ה-JWT של המערכת שלך כדי ששאר הראוטים יעבדו!
-        access_token = create_access_token(identity=user.id)
+        access_token = create_access_token(identity=str(user.id))
         return jsonify(access_token=access_token), 200
         
     except ValueError:
