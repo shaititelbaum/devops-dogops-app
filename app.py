@@ -648,6 +648,10 @@ def dog_profile():
         if not profile:
             profile = DogProfile(user_id=current_user_id)
             db.session.add(profile)
+            
+        user = User.query.filter_by(id=current_user_id).first()
+        if user and 'owner_first_name' in data:
+            user.first_name = data['owner_first_name']
         
         profile.name = data.get('name', profile.name)
         profile.breed = data.get('breed', profile.breed)
