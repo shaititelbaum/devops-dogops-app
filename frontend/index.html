@@ -2188,25 +2188,27 @@ async function addDogEvent(type) {
         // ==========================================
         function showSsoProfileModal(profile) {
             document.getElementById('sso-profile-modal').style.display = 'flex';
-            if (profile.owner_first_name) document.getElementById('sso-owner-name').value = profile.owner_first_name;
+            if (profile.owner_first_name) document.getElementById('sso-owner-first-name').value = profile.owner_first_name;
+            if (profile.owner_last_name) document.getElementById('sso-owner-last-name').value = profile.owner_last_name;
             if (profile.name && profile.name !== "כלב חדש") document.getElementById('sso-dog-name').value = profile.name;
         }
 
         async function saveSsoProfile() {
-            const ownerName = document.getElementById('sso-owner-name').value;
+            const firstName = document.getElementById('sso-owner-first-name').value;
+            const lastName = document.getElementById('sso-owner-last-name').value;
             const dogName = document.getElementById('sso-dog-name').value;
             
-            if (!ownerName || !dogName) {
+            if (!firstName || !lastName || !dogName) {
                 alert("אנא מלאו את כל הפרטים.");
                 return;
             }
             
             const token = localStorage.getItem('dogOpsToken');
             try {
-                const res = await fetch(`${API_URL}/api/profile`, {
+                const res = await fetch(`/api/profile`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ owner_first_name: ownerName, name: dogName })
+                    body: JSON.stringify({ owner_first_name: firstName, owner_last_name: lastName, name: dogName })
                 });
                 
                 if (res.ok) {
@@ -2229,13 +2231,16 @@ async function addDogEvent(type) {
     </div>
 
     <!-- SSO Complete Profile Modal -->
-    <div id="sso-profile-modal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center;">
-        <div style="background-color: #2c2f33; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
-            <h2 style="margin-top: 0; color: #7289da; font-size: 24px;">ברוכים הבאים ל-DogOps! 🐾</h2>
-            <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.5; color: #b9bbbe;">נראה שהתחברתם דרך חשבון חיצוני. כדי שנוכל להעניק לכם חוויה אישית ומושלמת, אנא השלימו את הפרטים הבאים:</p>
-            <input type="text" id="sso-owner-name" placeholder="איך קוראים לך?" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 6px; border: 1px solid #444; background: #1e1e1e; color: white; box-sizing: border-box; font-size: 16px; font-family: inherit;">
-            <input type="text" id="sso-dog-name" placeholder="איך קוראים לכלב/ה?" style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 6px; border: 1px solid #444; background: #1e1e1e; color: white; box-sizing: border-box; font-size: 16px; font-family: inherit;">
-            <button onclick="saveSsoProfile()" style="background-color: #7289da; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; width: 100%; font-size: 18px; font-weight: bold; transition: background-color 0.2s;">שמור והמשך למערכת</button>
+    <div id="sso-profile-modal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
+        <div class="glass-panel" style="padding: 40px; border-radius: 20px; width: 90%; max-width: 450px; text-align: center; color: white; background: rgba(30, 30, 30, 0.6); border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 15px 35px rgba(0,0,0,0.4);">
+            <h2 style="margin-top: 0; color: #7289da; font-size: 28px; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">ברוכים הבאים ל-DogOps! 🐾</h2>
+            <p style="margin-bottom: 25px; font-size: 16px; line-height: 1.6; color: #e2e8f0;">נראה שהתחברתם דרך חשבון חיצוני. כדי שנוכל להעניק לכם חוויה אישית ומושלמת, אנא השלימו את הפרטים הבאים:</p>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <input type="text" id="sso-owner-first-name" placeholder="שם פרטי" style="flex: 1; padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white; font-size: 16px; font-family: inherit; transition: all 0.3s ease; outline: none;">
+                <input type="text" id="sso-owner-last-name" placeholder="שם משפחה" style="flex: 1; padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white; font-size: 16px; font-family: inherit; transition: all 0.3s ease; outline: none;">
+            </div>
+            <input type="text" id="sso-dog-name" placeholder="איך קוראים לכלב/ה?" style="width: 100%; padding: 14px; margin-bottom: 25px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white; box-sizing: border-box; font-size: 16px; font-family: inherit; transition: all 0.3s ease; outline: none;">
+            <button onclick="saveSsoProfile()" style="background-color: #7289da; color: white; border: none; padding: 14px 20px; border-radius: 10px; cursor: pointer; width: 100%; font-size: 18px; font-weight: bold; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(114,137,218,0.4);">שמור והמשך למערכת</button>
         </div>
     </div>
 </body>
