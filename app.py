@@ -1,3 +1,10 @@
+# ==========================================
+# 🚀 CORE BACKEND ARCHITECTURE (FLASK)
+# ==========================================
+# This is the main application entry point for the DogOps backend.
+# It demonstrates a cloud-native Python backend built with Flask,
+# integrating PostgreSQL for structured data, AWS S3 for object storage,
+# and Google Gemini AI for advanced behavioral insights.
 import os
 import requests  # 👈 השורה החשובה שהייתה חסרה!
 import google.generativeai as genai
@@ -36,6 +43,12 @@ from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
 
+# ==========================================
+# 🚀 DISTRIBUTED TRACING (OPENTELEMETRY)
+# ==========================================
+# We instrument the application with OpenTelemetry to trace requests
+# across different components (Flask, SQLAlchemy, external HTTP).
+# Traces are exported to an OTLP endpoint for deep observability.
 # Initialize OpenTelemetry Tracing
 otel_resource = Resource.create({"service.name": "dogops-app"})
 provider = TracerProvider(resource=otel_resource)
@@ -65,8 +78,11 @@ metrics.info('app_info', 'DogOps Application info', version='1.0.0')
 
 
 # ==========================================
-# Custom Prometheus Metrics
+# 🚀 CUSTOM BUSINESS METRICS (PROMETHEUS)
 # ==========================================
+# These Prometheus metrics provide real-time visibility into business KPIs
+# and operational health, such as active dog profiles, AI response latencies,
+# and system security events. They are scraped and visualized in Grafana.
 # 1. Gauge: עוקב אחרי כמות הפרופילים הקיימים במערכת (מספר שיכול לעלות ולרדת)
 DOG_PROFILES_GAUGE = Gauge('dogops_active_profiles', 'Number of dog profiles registered in the system')
 

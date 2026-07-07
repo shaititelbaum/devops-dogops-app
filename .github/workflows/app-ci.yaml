@@ -11,6 +11,12 @@ on:
     branches:
       - "master"
 
+# ==========================================
+# 🚀 CI/CD PIPELINE (GITHUB ACTIONS)
+# ==========================================
+# This workflow is triggered on pushes and PRs. It performs code linting,
+# builds the backend and frontend Docker images, pushes them to AWS ECR,
+# and automatically updates the GitOps repository for continuous deployment.
 jobs:
   # Backend build and deploy pipeline
   build-and-test:

@@ -38,6 +38,12 @@ ingress:
         - path: /
           pathType: ImplementationSpecific
 
+# ==========================================
+# 🚀 KUBERNETES RESOURCES & AUTOSCALING
+# ==========================================
+# Resource requests and limits ensure predictable performance and prevent starvation.
+# The Horizontal Pod Autoscaler (HPA) uses these metrics to automatically scale
+# the application replicas based on real-time traffic and CPU utilization.
 resources:
   limits:
     cpu: 200m

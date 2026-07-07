@@ -8,6 +8,11 @@ This repository contains the complete source code for the Backend API, the Front
 
 ---
 
+## 📚 Self-Documenting Architecture
+This codebase is engineered to be presentation-ready. Throughout the critical source files (e.g., `app.py`, `charts/backend/values.yaml`, `.github/workflows/app-ci.yaml`), you will find large **Architectural Block Comments** (marked with `=======`) detailing the "Why" and "How" behind major design decisions such as OpenTelemetry tracing, HPA auto-scaling, and GitOps CI/CD flows.
+
+---
+
 ## 🌟 Core Features & Business Logic
 
 The DogOps application is packed with advanced functionalities tailored for canine behavior tracking and trainer productivity:
