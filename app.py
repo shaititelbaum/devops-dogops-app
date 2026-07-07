@@ -405,8 +405,12 @@ def delete_account():
     password = data.get('password')
     user = User.query.get(current_user_id)
 
-    if not user or not check_password_hash(user.password_hash, password):
-        return jsonify({"error": "סיסמה שגויה. לא ניתן למחוק את החשבון."}), 403
+    if not user:
+        return jsonify({"error": "משתמש לא נמצא."}), 404
+
+    if user.auth_provider == 'local':
+        if not password or not check_password_hash(user.password_hash, password):
+            return jsonify({"error": "סיסמה שגויה. לא ניתן למחוק את החשבון."}), 403
 
     email_to_send = user.email
     first_name = user.first_name or ""
@@ -499,7 +503,7 @@ def linkedin_callback():
     # לוגיקת התחברות או יצירת משתמש במערכת שלנו
     user = User.query.filter_by(email=email).first()
     if not user:
-        user = User(email=email, password_hash="LINKEDIN_SSO_USER", first_name=first_name, last_name=last_name)
+        user = User(email=email, password_hash="LINKEDIN_SSO_USER", first_name=first_name, last_name=last_name, auth_provider="linkedin")
         db.session.add(user)
         db.session.commit()
         

@@ -777,8 +777,11 @@
         }
 
         async function performDeleteAccount() {
-            const password = document.getElementById('set-delete-pass').value;
-            if (!password) return alert("חובה להזין סיסמה לאישור המחיקה.");
+            let password = '';
+            if (!window.currentUserAuthProvider || window.currentUserAuthProvider === 'local') {
+                password = document.getElementById('set-delete-pass').value;
+                if (!password) return alert("חובה להזין סיסמה לאישור המחיקה.");
+            }
             if (!confirm("האם אתה בטוח במאה אחוז? כל הנתונים, ההיסטוריה והתמונות יימחקו לתמיד.")) return;
 
             try {
@@ -1081,9 +1084,14 @@
         // --- ניהול מחיקת חשבון שלב אחר שלב ---
         function toggleSettingsDelete() {
             document.getElementById('btn-show-settings-delete').classList.toggle('hidden');
-            document.getElementById('settings-delete-step-1').classList.toggle('hidden');
-            document.getElementById('settings-delete-step-2').classList.add('hidden');
-            document.getElementById('set-delete-pass').value = '';
+            if (window.currentUserAuthProvider && window.currentUserAuthProvider !== 'local') {
+                // Skip password check for SSO users
+                document.getElementById('settings-delete-step-2').classList.remove('hidden');
+            } else {
+                document.getElementById('settings-delete-step-1').classList.toggle('hidden');
+                document.getElementById('settings-delete-step-2').classList.add('hidden');
+                document.getElementById('set-delete-pass').value = '';
+            }
         }
 
         function verifySettingsDelete() {
@@ -1575,6 +1583,8 @@ async function addDogEvent(type) {
         if (response.ok) {
             const profile = await response.json();
             console.log("Profile Data:", profile); // 👈 תוסיף את זה
+            
+            window.currentUserAuthProvider = profile.auth_provider || 'local';
         
         // --- הדלקת כיתוב הברכה הדינאמי ---
             if (profile.owner_first_name && profile.name && profile.name !== "כלב חדש") {
