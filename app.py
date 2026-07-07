@@ -26,7 +26,28 @@ from prometheus_client import Counter, Gauge, Histogram # 👈 הוסף את ה�
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 
+# OpenTelemetry Imports
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.instrumentation.flask import FlaskInstrumentor
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
+from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
+
+# Initialize OpenTelemetry Tracing
+otel_resource = Resource.create({"service.name": "dogops-app"})
+provider = TracerProvider(resource=otel_resource)
+provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
+trace.set_tracer_provider(provider)
+
+# Instrument globally
+RequestsInstrumentor().instrument()
+SQLAlchemyInstrumentor().instrument()
+
 app = Flask(__name__)
+FlaskInstrumentor().instrument_app(app)
 
 
 limiter = Limiter(
