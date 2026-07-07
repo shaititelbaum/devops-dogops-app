@@ -8,3 +8,8 @@ prometheus-flask-exporter==0.23.0
 google-auth
 requests
 Flask-Limiter==3.5.0
+opentelemetry-distro==0.45b0
+opentelemetry-exporter-otlp-proto-http==1.24.0
+opentelemetry-instrumentation-flask==0.45b0
+opentelemetry-instrumentation-requests==0.45b0
+opentelemetry-instrumentation-sqlalchemy==0.45b0
