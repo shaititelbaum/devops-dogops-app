@@ -54,6 +54,7 @@ jobs:
   # Frontend build and deploy pipeline
   build-and-push-frontend:
     name: Frontend Verify
+    needs: build-and-test
     runs-on: ubuntu-latest
 
     steps:
