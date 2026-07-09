@@ -68,9 +68,21 @@ nodeSelector: {}
 # --- הבלוקים החדשים שסוגרים את הנתקים ב-Templates ---
 serviceAccount:
   create: true
+
   annotations: {}
   name: ""
   automount: true
 
 httpRoute:
   enabled: false
+
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 1
+      preference:
+        matchExpressions:
+        - key: karpenter.sh/capacity-type
+          operator: In
+          values:
+          - spot
