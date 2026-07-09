@@ -69,7 +69,7 @@ spec:
               value: {{ .Values.databaseName | default "dogopsdb" | quote }}
             - name: DATABASE_URL
               # 👇 התיקון הארכיטקטוני המדויק: הוספת הפרוטוקול ועטיפה תקינה בגרשיים
-              value: "postgresql://$(DB_USER):$(DB_PASS)@$(DB_HOST):5432/$(DB_NAME)"
+              value: "postgresql://$(DB_USER):$(DB_PASS)@$(DB_HOST):5432/$(DB_NAME)?sslmode=require"
             - name: S3_BUCKET_NAME
               value: {{ .Values.s3BucketName | quote }}
             {{- if not .Values.aws.irsaEnabled }}
