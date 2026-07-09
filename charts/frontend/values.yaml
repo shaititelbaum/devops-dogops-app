@@ -63,8 +63,7 @@ keda:
 # ==========================================
 # This tells Kubernetes (and Karpenter) to prefer placing this application
 # on heavily discounted Spot instances to save costs.
-nodeSelector:
-  karpenter.sh/capacity-type: spot
+nodeSelector: {}
 
 # --- הבלוקים החדשים שסוגרים את הנתקים ב-Templates ---
 serviceAccount:
