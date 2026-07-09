@@ -1,0 +1,23 @@
+{{- if .Values.keda.enabled }}
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ include "devops-dogops-backend-chart.fullname" . }}
+  labels:
+    {{- include "devops-dogops-backend-chart.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "devops-dogops-backend-chart.fullname" . }}
+  minReplicaCount: {{ .Values.keda.minReplicas }}
+  maxReplicaCount: {{ .Values.keda.maxReplicas }}
+  triggers:
+    # Example: Scale up to 5 pods during work hours, scale down to 0 at night
+    - type: cron
+      metadata:
+        timezone: Etc/UTC
+        start: 0 8 * * *
+        end: 0 20 * * *
+        desiredReplicas: "3"
+{{- end }}

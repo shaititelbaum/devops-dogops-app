@@ -39,6 +39,22 @@ DogOps is built using modern cloud-native principles:
 
 ---
 
+## 📈 Dual-Engine Autoscaling Architecture
+
+DogOps features a highly modular autoscaling design built directly into its Helm charts, allowing cluster administrators to seamlessly toggle between two powerful scaling engines depending on the environment's specific needs:
+
+1. **Standard Autoscaling (HPA)**: 
+   * **What it is:** The native Kubernetes Horizontal Pod Autoscaler.
+   * **Why/When we use it:** This is the **default, primary strategy**. It watches pure CPU and Memory consumption. It is incredibly stable, requires zero overhead, and is the perfect baseline for normal HTTP web traffic bursts.
+2. **Event-Driven Autoscaling (KEDA)**:
+   * **What it is:** Kubernetes Event-driven Autoscaling, an enterprise CNCF project.
+   * **Why/When we use it:** This is included as an advanced **"Show Off" / Toggle option**. KEDA replaces the standard HPA with a `ScaledObject` that can do things HPA cannot: **Scale to Zero**.
+   * **How it works:** We configured KEDA to use a `Cron` scaler. In a staging environment, KEDA can scale the entire application down to zero pods at night to save cloud costs, and wake it up automatically the next morning.
+
+**How to Toggle:** Administrators can simply flip `autoscaling.enabled=false` and `keda.enabled=true` in the `values.yaml` file, and GitOps handles the rest!
+
+---
+
 ## 🌳 Complete Repository Tree
 
 ```text
