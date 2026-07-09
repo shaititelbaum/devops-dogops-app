@@ -102,7 +102,7 @@ spec:
                   key: SMTP_PASSWORD
             # הגדרות ניתוב Cloud First עבור ה-SSO
             - name: HOST_DOMAIN
-              value: {{ .Values.ingress.hosts[0].host | quote }}
+              value: {{ (index .Values.ingress.hosts 0).host | quote }}
             # OpenTelemetry
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: "http://tempo.monitoring.svc.cluster.local:4318/v1/traces"

@@ -58,7 +58,7 @@ resources:
 # Native Kubernetes scaling based on CPU utilization.
 # (Keep this as the primary active scaling strategy)
 autoscaling:
-  enabled: true
+  enabled: false
   minReplicas: 1
   maxReplicas: 5
   targetCPUUtilizationPercentage: 80
@@ -71,11 +71,17 @@ autoscaling:
 # scale all the way to ZERO when traffic dies, or pre-scale via Cron.
 # To activate: Set keda.enabled=true and autoscaling.enabled=false.
 keda:
-  enabled: false
-  minReplicas: 0
+  enabled: true
+  minReplicas: 1
   maxReplicas: 10
 
-nodeSelector: {}
+# ==========================================
+# 🛑 SPOT INSTANCE SCHEDULING
+# ==========================================
+# This tells Kubernetes (and Karpenter) to prefer placing this application
+# on heavily discounted Spot instances to save costs.
+nodeSelector:
+  karpenter.sh/capacity-type: spot
 
 tolerations: []
 
