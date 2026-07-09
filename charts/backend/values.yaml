@@ -52,11 +52,28 @@ resources:
     cpu: 100m
     memory: 128Mi
 
+# ==========================================
+# 🚀 DEFAULT: STANDARD POD AUTOSCALING (HPA)
+# ==========================================
+# Native Kubernetes scaling based on CPU utilization.
+# (Keep this as the primary active scaling strategy)
 autoscaling:
   enabled: true
   minReplicas: 1
   maxReplicas: 5
   targetCPUUtilizationPercentage: 80
+
+# ==========================================
+# 🔌 OPTIONAL: EVENT-DRIVEN SCALING (KEDA)
+# ==========================================
+# "Toggle Switch" for Enterprise KEDA Scaling!
+# When enabled, it replaces standard HPA with a ScaledObject that can
+# scale all the way to ZERO when traffic dies, or pre-scale via Cron.
+# To activate: Set keda.enabled=true and autoscaling.enabled=false.
+keda:
+  enabled: false
+  minReplicas: 0
+  maxReplicas: 10
 
 nodeSelector: {}
 
