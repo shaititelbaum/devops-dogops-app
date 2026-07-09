@@ -54,9 +54,17 @@ autoscaling:
 # scale all the way to ZERO when traffic dies, or pre-scale via Cron.
 # To activate: Set keda.enabled=true and autoscaling.enabled=false.
 keda:
-  enabled: false
-  minReplicas: 0
+  enabled: true
+  minReplicas: 1
   maxReplicas: 10
+
+# ==========================================
+# 🛑 SPOT INSTANCE SCHEDULING
+# ==========================================
+# This tells Kubernetes (and Karpenter) to prefer placing this application
+# on heavily discounted Spot instances to save costs.
+nodeSelector:
+  karpenter.sh/capacity-type: spot
 
 # --- הבלוקים החדשים שסוגרים את הנתקים ב-Templates ---
 serviceAccount:
