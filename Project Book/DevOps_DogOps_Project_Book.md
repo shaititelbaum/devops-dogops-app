@@ -178,26 +178,7 @@ module "infrastructure" {
 לכל רכיב באפליקציה יש `Dockerfile` משלו. הקפדנו על עקרונות Best Practices בבניית תמונות Docker, כגון שימוש ב-Multi-stage builds כדי להקטין את נפח האימג' הסופי ולשפר את רמת האבטחה (ריצה ללא הרשאות root).
 
 **דוגמה ל-Dockerfile של ה-Backend (Python/Flask):**
-```dockerfile
-# Stage 1: Build dependencies
-FROM python:3.11-slim as builder
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install --user -r requirements.txt
-
-# Stage 2: Final minimal image
-FROM python:3.11-slim
-WORKDIR /app
-COPY --from=builder /root/.local /root/.local
-COPY . .
-ENV PATH=/root/.local/bin:$PATH
-# Run as non-root user for security
-RUN useradd -m appuser && chown -R appuser /app
-USER appuser
-
-EXPOSE 5000
-CMD ["flask", "run", "--host=0.0.0.0"]
-```
+*(ראה סעיף דוגמאות קוד בסוף הספר)*
 
 ---
 
@@ -264,27 +245,71 @@ CMD ["flask", "run", "--host=0.0.0.0"]
 ### 3. דאשבורד Grafana
 *(הכנס צילום מסך של גרפנה מציג צריכת זיכרון ו-CPU של הקלאסטר)*
 
-### 4. דוגמה מקוד ה-GitHub Actions:
-```yaml
-name: App CI
+### 4. דוגמאות קוד מרכזיות מהפרויקט:
 
+**Dockerfile (Backend - Multi-Stage):**
+```dockerfile
+FROM python:3.11-slim AS builder
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+FROM python:3.11-slim
+WORKDIR /app
+COPY --from=builder /root/.local /root/.local
+COPY app.py .
+COPY frontend/ ./frontend/
+ENV PATH=/root/.local/bin:$PATH
+EXPOSE 5000
+CMD ["python", "app.py"]
+```
+
+**GitHub Actions (CI/CD Pipeline):**
+```yaml
+name: DogOps CI CD Pipeline
 on:
   push:
-    branches: [ "main" ]
-
+    branches: [ "master", "feature/**" ]
 jobs:
-  build-and-push:
+  build-and-test:
+    name: Backend Verify
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Login to Amazon ECR
-      uses: aws-actions/amazon-ecr-login@v1
-      
-    - name: Build, tag, and push image
-      run: |
-        docker build -t $ECR_REGISTRY/dogops-backend:${{ github.sha }} ./backend
-        docker push $ECR_REGISTRY/dogops-backend:${{ github.sha }}
+    - uses: actions/checkout@v4
+    - name: Run Code Lint
+      run: pylint --errors-only .
+    - name: Deploy to ECR and GitOps
+      uses: ./.github/actions/deploy-ecr-gitops
+      with:
+        app_name: "backend"
+        docker_path: "."
+```
+
+**ArgoCD ApplicationSet (Multi-Tenant GitOps):**
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: prod-environments
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - env: prod
+  template:
+    metadata:
+      name: '{{env}}-apps'
+    spec:
+      source:
+        repoURL: 'https://github.com/shaititelbaum/devops-dogops-gitops.git'
+        targetRevision: master
+        path: environments/base
+        helm:
+          valueFiles:
+            - ../values-{{env}}.yaml
+      destination:
+        namespace: '{{env}}'
 ```
 
 ---
