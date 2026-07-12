@@ -382,6 +382,18 @@ def reset_password():
     db.session.add(new_history)
     db.session.commit()
 
+    # שליחת מייל אישור עם הסיסמה החדשה
+    body = (
+        f"שלום {user.first_name}!\n\n"
+        f"הסיסמה שלך ל-DogOps אופסה בהצלחה.\n\n"
+        f"להלן פרטי ההתחברות המעודכנים שלך:\n"
+        f"שם משתמש: <span dir=\"ltr\">{user.email}</span>\n"
+        f"סיסמה חדשה: <span dir=\"ltr\">{new_password}</span>\n\n"
+        f"אם לא ביצעת שינוי זה, פנה אלינו מיד.\n\n"
+        f"בהצלחה באילוף,\nצוות DogOps 🐾"
+    )
+    send_dogops_email(user.email, "DogOps - הסיסמה שלך אופסה בהצלחה", "אישור איפוס סיסמה", body)
+
     return jsonify({"message": "הסיסמה שונתה בהצלחה"}), 200
 
 # ==========================================
@@ -431,7 +443,19 @@ def change_password():
     new_history = PasswordHistory(user_id=user.id, password_hash=new_hash)
     db.session.add(new_history)
     db.session.commit()
-    
+
+    # שליחת מייל אישור עם הסיסמה החדשה
+    body = (
+        f"שלום {user.first_name}!\n\n"
+        f"הסיסמה שלך ל-DogOps עודכנה בהצלחה.\n\n"
+        f"להלן פרטי ההתחברות המעודכנים שלך:\n"
+        f"שם משתמש: <span dir=\"ltr\">{user.email}</span>\n"
+        f"סיסמה חדשה: <span dir=\"ltr\">{new_password}</span>\n\n"
+        f"אם לא ביצעת שינוי זה, פנה אלינו מיד.\n\n"
+        f"בהצלחה באילוף,\nצוות DogOps 🐾"
+    )
+    send_dogops_email(user.email, "DogOps - הסיסמה שלך עודכנה", "אישור עדכון סיסמה", body)
+
     return jsonify({"message": "הסיסמה עודכנה בהצלחה."}), 200
 
 @app.route('/api/account', methods=['DELETE'])
