@@ -30,8 +30,7 @@ service:
 ingress:
   enabled: true
   className: "nginx"
-  annotations:
-    kubernetes.io/ingress.class: nginx
+  annotations: {}
   hosts:
     - host: dogops.local
       paths:
