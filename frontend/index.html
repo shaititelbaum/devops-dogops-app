@@ -1346,10 +1346,11 @@ async function addDogEvent(type) {
             if (type === 'good' && clickerSound) {
                 clickerSound.currentTime = 0;
                 clickerSound.play().catch(e=>{});
-            } else if (type === 'oops' && oopsSound) {
-                oopsSound.currentTime = 0;
-                oopsSound.play().catch(e=>{});
             }
+            // else if (type === 'oops' && oopsSound) {
+            //     oopsSound.currentTime = 0;
+            //     oopsSound.play().catch(e=>{});
+            // }
 
             const input = document.getElementById('todo-input');
             const text = input.value.trim();
