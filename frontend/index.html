@@ -48,13 +48,17 @@
         <!-- קונטיינר לשורת כפתורי ה-SSO -->
         <div class="sso-buttons-container">
             
-            <!-- כפתור גוגל (מרונדר רשמית על ידי גוגל - ללא מעטפת בלתי נראית למניעת חסימת Clickjacking) -->
-            <div class="g_id_signin" 
-                 data-type="icon" 
-                 data-shape="circle" 
-                 data-theme="outline" 
-                 data-size="large"
-                 title="התחבר עם גוגל">
+            <!-- כפתור גוגל (עיצוב מותאם עם Overlay שקוף) -->
+            <div class="sso-circle-btn custom-google-wrapper" title="התחבר עם גוגל">
+                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/google/google-original.svg" alt="Google">
+                <div class="google-invisible-overlay">
+                    <div class="g_id_signin" 
+                         data-type="icon" 
+                         data-shape="circle" 
+                         data-theme="outline" 
+                         data-size="large">
+                    </div>
+                </div>
             </div>
             
             <!-- כפתור מיקרוסופט -->
